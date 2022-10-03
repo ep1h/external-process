@@ -18,6 +18,8 @@ public:
     ~ExternalProcess(void);
 
 private:
+    uint32_t get_process_id_by_process_name(const char *process_name) const;
+
     uint32_t _process_id;
 };
 

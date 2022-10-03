@@ -11,7 +11,7 @@
 
 using namespace P1ExternalProcess;
 
-ExternalProcess::ExternalProcess(void)
+ExternalProcess::ExternalProcess(uint32_t process_id) : _process_id(process_id)
 {
 }
 

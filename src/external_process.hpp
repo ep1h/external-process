@@ -6,16 +6,19 @@
 #ifndef EXTERNAL_PROCESS_HPP
 #define EXTERNAL_PROCESS_HPP
 
+#include <cstdint>
+
 namespace P1ExternalProcess
 {
 
 class ExternalProcess
 {
 public:
-    ExternalProcess(void);
+    ExternalProcess(uint32_t process_id);
     ~ExternalProcess(void);
 
 private:
+    uint32_t _process_id;
 };
 
 } /* namespace P1ExternalProcess */

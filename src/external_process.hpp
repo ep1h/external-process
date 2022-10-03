@@ -15,6 +15,7 @@ class ExternalProcess
 {
 public:
     ExternalProcess(uint32_t process_id);
+    ExternalProcess(const char *process_name);
     ~ExternalProcess(void);
 
 private:

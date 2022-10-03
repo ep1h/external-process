@@ -17,6 +17,19 @@ ExternalProcess::ExternalProcess(uint32_t process_id) : _process_id(process_id)
 {
 }
 
+/**-----------------------------------------------------------------------------
+; @ExternalProcess
+;
+; @brief
+;   Constructor. This constructor takes a process name @process_name, gets the
+;   process id using @get_process_id_by_process_name method and delegates object
+;   creation to the constructor that takes a process id.
+;-----------------------------------------------------------------------------*/
+ExternalProcess::ExternalProcess(const char *process_name)
+    : ExternalProcess(get_process_id_by_process_name(process_name))
+{
+}
+
 ExternalProcess::~ExternalProcess(void)
 {
 }

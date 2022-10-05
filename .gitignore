@@ -1,0 +1,12 @@
+/*
+/*/
+!/.gitignore
+!/README.md
+
+!/src
+!/test/
+/test/*
+!/test/unit_tests/
+/test/unit_tests/*
+!/test/unit_tests/src
+!/test/unit_tests/Makefile

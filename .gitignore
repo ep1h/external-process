@@ -6,7 +6,13 @@
 !/src
 !/test/
 /test/*
+#unit_tests src and Makefile
 !/test/unit_tests/
 /test/unit_tests/*
 !/test/unit_tests/src
 !/test/unit_tests/Makefile
+#external_process_simulator src and Makefile
+!/test/external_process_simulator/
+/test/external_process_simulator/*
+!/test/external_process_simulator/src
+!/test/external_process_simulator/Makefile

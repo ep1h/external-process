@@ -1,4 +1,5 @@
 # SETTINGS #####################################################################
+EXTERNAL_PROCESS_SIMULATOR_NAME?=external_process_simulator.exe
 APP_NAME:=test.exe
 OBJ_DIR:=obj
 BIN_DIR:=bin
@@ -6,7 +7,8 @@ SRC_ROOT_DIR_S:=src ../../src
 
 C_COMPILER:=i686-w64-mingw32-gcc
 CPP_COMPILER:=i686-w64-mingw32-g++
-CMP_FLAGS:=-Wall -Werror -O2 -DTEST_RUN
+CMP_FLAGS:=-Wall -Werror -O2 -DTEST_RUN \
+-DEXTERNAL_PROCESS_SIMULATOR_NAME=$(EXTERNAL_PROCESS_SIMULATOR_NAME)
 LINKER:=$(CPP_COMPILER)
 LINK_FLAGS:=-static
 

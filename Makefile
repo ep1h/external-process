@@ -12,13 +12,13 @@ run_tests: build
 	taskkill /IM $(SIM_NAME)
 	
 build_unit_tests:
-	$(MAKE) -C test/unit_tests/
+	$(MAKE) -C test/unit_tests/ EXTERNAL_PROCESS_SIMULATOR_NAME=$(SIM_NAME)
 
 clean_unit_tests:
 	$(MAKE) -C test/unit_tests/ clean
 
 build_external_process_simulator:
-	$(MAKE) -C $(SIM_DIR)
+	$(MAKE) -C $(SIM_DIR) EXTERNAL_PROCESS_SIMULATOR_NAME=$(SIM_NAME)
 
 clean_external_process_simulator:
 	$(MAKE) -C $(SIM_DIR) clean

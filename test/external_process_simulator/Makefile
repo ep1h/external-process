@@ -1,5 +1,6 @@
 # SETTINGS #####################################################################
-APP_NAME:=external_process_simulator.exe
+EXTERNAL_PROCESS_SIMULATOR_NAME ?= external_process_simulator.exe
+APP_NAME:=$(EXTERNAL_PROCESS_SIMULATOR_NAME)
 OBJ_DIR:=obj
 BIN_DIR:=bin
 SRC_ROOT_DIR_S:=src

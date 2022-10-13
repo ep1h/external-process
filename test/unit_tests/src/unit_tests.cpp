@@ -7,19 +7,8 @@
 ; @author ep1h
 ;-----------------------------------------------------------------------------*/
 #include "test.h"
-
+#include "test_utils.hpp"
 #include "../../../src/external_process.hpp"
-
-#define QQ(x) #x
-#define Q(x) QQ(x)
-
-#ifndef EXTERNAL_PROCESS_SIMULATOR_NAME
-#define EXTERNAL_PROCESS_SIMULATOR_NAME external_process_simulator.exe
-#endif /* EXTERNAL_PROCESS_SIMULATOR_NAME */
-
-/* Remote process name. Testing functionality of ExternalProcess class will be
- * performed based on interaction with this process. */
-static const char test_application[] = Q(EXTERNAL_PROCESS_SIMULATOR_NAME);
 
 using P1ExternalProcess::ExternalProcess;
 

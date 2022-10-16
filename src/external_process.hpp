@@ -14,6 +14,7 @@ namespace P1ExternalProcess
 class ExternalProcess
 {
 public:
+    ExternalProcess(void *process_handle);
     ExternalProcess(uint32_t process_id);
     ExternalProcess(const char *process_name);
     ~ExternalProcess(void);
@@ -21,7 +22,7 @@ public:
 private:
     uint32_t get_process_id_by_process_name(const char *process_name) const;
 
-    uint32_t _process_id;
+    void *_handle;
 };
 
 } /* namespace P1ExternalProcess */

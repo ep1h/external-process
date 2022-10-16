@@ -13,7 +13,26 @@
 
 using namespace P1ExternalProcess;
 
-ExternalProcess::ExternalProcess(uint32_t process_id) : _process_id(process_id)
+/**-----------------------------------------------------------------------------
+; @ExternalProcess
+;
+; @brief
+;   Constructor. This constructor assigns @process_handle to @_handle field.
+;-----------------------------------------------------------------------------*/
+ExternalProcess::ExternalProcess(void *process_handle) : _handle(process_handle)
+{
+}
+
+/**-----------------------------------------------------------------------------
+; @ExternalProcess
+;
+; @brief
+;   Constructor. This constructor takes a process id @process_id, gets the
+;   process handle id using OpenProcess method and delegates object creation to
+;   the constructor that takes a process handle.
+;-----------------------------------------------------------------------------*/
+ExternalProcess::ExternalProcess(uint32_t process_id)
+    : ExternalProcess(OpenProcess(PROCESS_ALL_ACCESS, FALSE, process_id))
 {
 }
 
@@ -30,8 +49,15 @@ ExternalProcess::ExternalProcess(const char *process_name)
 {
 }
 
+/**-----------------------------------------------------------------------------
+; @~ExternalProcess
+;
+; @brief
+;   Destructor. Closes process handle.
+;-----------------------------------------------------------------------------*/
 ExternalProcess::~ExternalProcess(void)
 {
+    CloseHandle((HANDLE)_handle);
 }
 
 /**-----------------------------------------------------------------------------

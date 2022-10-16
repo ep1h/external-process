@@ -18,8 +18,10 @@ TEST_BEGIN(get_process_id_by_non_existent_process_name)
 TEST_END
 
 TEST_BEGIN(get_process_id_by_existent_process_name)
+    run_external_process_simulator();
     ExternalProcess ep((uint32_t)0);
     EXPECT_NOT_ZERO(ep.get_process_id_by_process_name(test_application));
+    terminate_external_process_simulator();
 TEST_END
 
 RUN_TESTS(get_process_id_by_non_existent_process_name,

@@ -10,6 +10,8 @@
 #ifndef TEST_UTILS_HPP
 #define TEST_UTILS_HPP
 
+#include <cstdint>
+
 #define QQ(x) #x
 #define Q(x) QQ(x)
 
@@ -20,5 +22,9 @@
 /* Remote process name. Testing functionality of ExternalProcess class will be
    performed based on interaction with this process. */
 extern const char test_application[];
+
+uint32_t run_external_process_simulator(void);
+uint32_t run_external_process_simulator(const char *arg);
+void terminate_external_process_simulator(void);
 
 #endif /* TEST_UTILS_HPP */

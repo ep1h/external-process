@@ -61,6 +61,20 @@ ExternalProcess::~ExternalProcess(void)
 }
 
 /**-----------------------------------------------------------------------------
+; @read_buf
+;
+; @brief
+;   Reads @size bytes at @address address of the external process.
+;   Writes the result to @out_result.
+;-----------------------------------------------------------------------------*/
+void ExternalProcess::read_buf(uint32_t address, uint32_t size,
+                               void *out_result) const
+{
+    ReadProcessMemory(static_cast<HANDLE>(_handle),
+                      reinterpret_cast<LPCVOID>(address), out_result, size, 0);
+}
+
+/**-----------------------------------------------------------------------------
 ; @get_process_id_by_process_name
 ;
 ; @brief

@@ -24,5 +24,20 @@ TEST_BEGIN(get_process_id_by_existent_process_name)
     terminate_external_process_simulator();
 TEST_END
 
+TEST_BEGIN(read_buf)
+    uint32_t buf_addr = run_external_process_simulator("buffer");
+    uint32_t buf_size = run_external_process_simulator("buffer_size");
+    uint8_t *buf = new uint8_t[buf_size];
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+    ep.read_buf(buf_addr, buf_size, buf);
+    for (unsigned int i = 0; i < buf_size; i++)
+    {
+        EXPECT(buf[i], i);
+    }
+    terminate_external_process_simulator();
+    delete[] buf;
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
-          get_process_id_by_existent_process_name);
+          get_process_id_by_existent_process_name, read_buf);

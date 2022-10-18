@@ -53,10 +53,17 @@ ExternalProcess::ExternalProcess(const char *process_name)
 ; @~ExternalProcess
 ;
 ; @brief
-;   Destructor. Closes process handle.
+;   Destructor. Frees all memory allocated in remote process. Closes process
+;   handle.
 ;-----------------------------------------------------------------------------*/
 ExternalProcess::~ExternalProcess(void)
 {
+    for (auto i = _allocated_memory.cbegin(), n = i;
+         i != _allocated_memory.cend(); i = n)
+    {
+        ++n;
+        free(i->first);
+    }
     CloseHandle((HANDLE)_handle);
 }
 
@@ -86,6 +93,49 @@ void ExternalProcess::write_buf(uint32_t address, uint32_t size,
 {
     WriteProcessMemory(static_cast<HANDLE>(_handle),
                        reinterpret_cast<LPVOID>(address), data, size, 0);
+}
+
+/**-----------------------------------------------------------------------------
+; @alloc
+;
+; @brief
+;   Allocates @size bytes in the external process. If allocation is successful,
+;   adds an entry to the @_allocated_memory map, where the key is the address
+;   where the memory was allocated, the value is the number of allocated bytes.
+;
+; @return
+;   Address of the allocated memory if success.
+;   NULL if fail.
+;-----------------------------------------------------------------------------*/
+uint32_t ExternalProcess::alloc(const uint32_t size)
+{
+    // TODO: Add rights as function argument.
+    void *address =
+        VirtualAllocEx(static_cast<HANDLE>(_handle), NULL, size,
+                       MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    if (address != NULL)
+    {
+        _allocated_memory[reinterpret_cast<uint32_t>(address)] = size;
+    }
+    return reinterpret_cast<uint32_t>(address);
+}
+
+/**-----------------------------------------------------------------------------
+; @free
+;
+; @brief
+;   Frees allocated region located at @address address in the external process.
+;   Removes an entry from the @_allocated_memory map, where the key is @address.
+;-----------------------------------------------------------------------------*/
+void ExternalProcess::free(uint32_t address)
+{
+    auto result = _allocated_memory.find(address);
+    if (result != _allocated_memory.end())
+    {
+        VirtualFreeEx((HANDLE)_handle, reinterpret_cast<void *>(address),
+                      result->second, MEM_RELEASE);
+        _allocated_memory.erase(address);
+    }
 }
 
 /**-----------------------------------------------------------------------------

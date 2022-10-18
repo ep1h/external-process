@@ -59,5 +59,42 @@ TEST_BEGIN(write_buf)
     delete[] buf;
 TEST_END
 
+TEST_BEGIN(alloc_free)
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+    EXPECT(ep._allocated_memory.size(), 0);
+    uint32_t result_1 = ep.alloc(64);
+    EXPECT(ep._allocated_memory.size(), 1);
+    uint32_t result_2 = ep.alloc(32);
+    EXPECT(ep._allocated_memory.size(), 2);
+    uint32_t result_3 = ep.alloc(16);
+    EXPECT(ep._allocated_memory.size(), 3);
+
+    /* Alloc 0 bytes */
+    uint32_t result_4 = ep.alloc(0);
+    EXPECT(result_4, 0);
+    EXPECT(ep._allocated_memory.size(), 3);
+
+    /* Alloc too many bytes */
+    uint32_t result_5 = ep.alloc(-1);
+    EXPECT(result_5, 0);
+    EXPECT(ep._allocated_memory.size(), 3);
+
+    /* Free unallocated memory */
+    ep.free(0);
+    EXPECT(ep._allocated_memory.size(), 3);
+
+    EXPECT(ep._allocated_memory.at(result_1), 64);
+    EXPECT(ep._allocated_memory.at(result_2), 32);
+    EXPECT(ep._allocated_memory.at(result_3), 16);
+    ep.free(result_2);
+    EXPECT(ep._allocated_memory.size(), 2);
+    ep.free(result_1);
+    ep.free(result_3);
+    EXPECT(ep._allocated_memory.size(), 0);
+    terminate_external_process_simulator();
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
-          get_process_id_by_existent_process_name, read_buf, write_buf);
+          get_process_id_by_existent_process_name, read_buf, write_buf,
+          alloc_free);

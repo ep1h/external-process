@@ -19,6 +19,7 @@ public:
     ExternalProcess(const char *process_name);
     ~ExternalProcess(void);
     void read_buf(uint32_t address, uint32_t size, void *out_result) const;
+    void write_buf(uint32_t address, uint32_t size, const void *data) const;
 
 private:
     uint32_t get_process_id_by_process_name(const char *process_name) const;

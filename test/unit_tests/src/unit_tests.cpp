@@ -6,6 +6,7 @@
 ;
 ; @author ep1h
 ;-----------------------------------------------------------------------------*/
+#include <cstring>
 #include "test.h"
 #include "test_utils.hpp"
 #include "../../../src/external_process.hpp"
@@ -39,5 +40,24 @@ TEST_BEGIN(read_buf)
     delete[] buf;
 TEST_END
 
+TEST_BEGIN(write_buf)
+    uint32_t buf_addr = run_external_process_simulator("buffer");
+    uint32_t buf_size = run_external_process_simulator("buffer_size");
+    uint8_t *buf = new uint8_t[buf_size];
+    memset(buf, 0xBB, buf_size);
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+    ep.write_buf(buf_addr, buf_size, buf);
+    memset(buf, 0, buf_size);
+    ep.read_buf(buf_addr, buf_size, buf);
+    for (unsigned int i = 0; i < buf_size; i++)
+    {
+        // OUTPUT("%x ", buf[i]);
+        EXPECT(buf[i], 0xBB);
+    }
+    terminate_external_process_simulator();
+    delete[] buf;
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
-          get_process_id_by_existent_process_name, read_buf);
+          get_process_id_by_existent_process_name, read_buf, write_buf);

@@ -75,6 +75,20 @@ void ExternalProcess::read_buf(uint32_t address, uint32_t size,
 }
 
 /**-----------------------------------------------------------------------------
+; @write_buf
+;
+; @brief
+;   Writes @size bytes from @data buffer to the external process at @address
+;   address.
+;-----------------------------------------------------------------------------*/
+void ExternalProcess::write_buf(uint32_t address, uint32_t size,
+                                const void *data) const
+{
+    WriteProcessMemory(static_cast<HANDLE>(_handle),
+                       reinterpret_cast<LPVOID>(address), data, size, 0);
+}
+
+/**-----------------------------------------------------------------------------
 ; @get_process_id_by_process_name
 ;
 ; @brief

@@ -29,6 +29,7 @@ public:
                                    uint32_t args, ...);
     uint32_t call_thiscall_function(uint32_t address, uint32_t this_ptr,
                                     uint32_t argc, uint32_t args, ...);
+    template <typename T> T read(uint32_t address) const;
 
 private:
     uint32_t get_process_id_by_process_name(const char *process_name) const;
@@ -36,6 +37,13 @@ private:
     void *_handle;
     std::unordered_map<uint32_t, uint32_t> _allocated_memory;
 };
+
+template <typename T> inline T ExternalProcess::read(uint32_t address) const
+{
+    T result;
+    read_buf(address, sizeof(T), &result);
+    return result;
+}
 
 } /* namespace P1ExternalProcess */
 

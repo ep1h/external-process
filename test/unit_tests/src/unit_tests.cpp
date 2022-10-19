@@ -95,6 +95,15 @@ TEST_BEGIN(alloc_free)
     terminate_external_process_simulator();
 TEST_END
 
+TEST_BEGIN(cdecl_caller)
+    uint32_t cdecl_sum_func_addr = run_external_process_simulator("sum_cdecl");
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+    uint32_t sum = ep.call_cdecl_function(cdecl_sum_func_addr, 2, 2, 4);
+    EXPECT(sum, 6);
+    terminate_external_process_simulator();
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
-          alloc_free);
+          alloc_free, cdecl_caller);

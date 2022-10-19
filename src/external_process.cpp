@@ -239,6 +239,98 @@ uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
 }
 
 /**-----------------------------------------------------------------------------
+; @call_stdcall_function
+;
+; @brief
+;   Creates a buffer with execution rights at @caller_address address of the
+;   external process. Writes to this buffer a set of i686 instructions that:
+;       - push arguments in the amount of @argc onto the stack
+;       - call function at @address using 'cdecl' call convention
+;       - return
+;   Creates a thread in remote process. This thread executes the code located in
+;   @caller_address buffer. Waits for this thread to finish executing.
+;   Returns a value returned by the function at the @address address (or a value
+;   of EAX register for void functions).
+;
+;   stdcall-function caller structure:
+;     BYTES         INSTRUCTION     SIZE    COMMENT
+;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the last arg. value
+;     ...
+;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the 2-nd arg. value
+;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the 1-st arg. value
+;     E8 XXXXXXXX   call XXXXXXXX   5       XXXXXXXX = function address
+;     C3            ret             1       Return (terminate the thread)
+;
+; @param address    An address of a function to be called.
+; @param argc       A number of arguments that the function takes.
+; @param args       Arguments.
+;
+; @return
+;   A value returned by the called function (or a value of EAX register for
+;   functions of 'void' type.
+;-----------------------------------------------------------------------------*/
+uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
+                                                uint32_t args, ...)
+{
+    /* Calculate caller size */
+    size_t caller_size =
+        (1 + 4) * argc + /* (push-instruction size + argument size) * argc */
+        1 + 4 +          /* call-instruction size + address size */
+        1;               /* ret-instruction size */
+
+    /* Allocate space for the caller in the remote process's address space */
+    uint32_t caller_address = alloc(caller_size);
+
+    /* Create local buffer to be sent in remote process */
+    uint8_t *local_caller_buffer = new uint8_t[caller_size];
+
+    /* Write push-args instructions in the caller. */
+    for (uint32_t i = 0; i < argc; i++)
+    {
+        local_caller_buffer[i * 5] = 0x68; /* push */
+        /* argument */
+        *reinterpret_cast<uint32_t *>(local_caller_buffer + i * 5 + 1) =
+            *(&args + i);
+    }
+
+    /* Write call-instruction to the caller bytes */
+    local_caller_buffer[argc * 5] = 0xe8; /* call */
+
+    /* Calculate and write an address for the near call instruction */
+    *reinterpret_cast<uint32_t *>(local_caller_buffer + argc * 5 + 1) =
+        address - (caller_address + argc * 5) - 5;
+
+    /* Write ret-instruction to the caller bytes */
+    local_caller_buffer[argc * 5 + 5] = 0xc3; /* ret */
+
+    /* Write caller bytes to the remote process's memory */
+    write_buf(caller_address, caller_size, local_caller_buffer);
+
+    delete[] local_caller_buffer;
+
+    /* Create a thread in the remote process */
+    HANDLE thread_handle = CreateRemoteThread(
+        static_cast<HANDLE>(_handle), NULL, 0,
+        reinterpret_cast<LPTHREAD_START_ROUTINE>(caller_address), NULL, 0,
+        NULL);
+
+    /* Wait for a return from the function */
+    while (WaitForSingleObject(thread_handle, 0) != 0)
+    {
+    }
+
+    DWORD result = 0;
+    /* Get the returned value */
+    GetExitCodeThread(thread_handle, &result);
+
+    CloseHandle(thread_handle);
+
+    free(caller_address);
+
+    return result;
+}
+
+/**-----------------------------------------------------------------------------
 ; @get_process_id_by_process_name
 ;
 ; @brief

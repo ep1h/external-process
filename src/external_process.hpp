@@ -33,10 +33,32 @@ public:
     template <typename T> void write(uint32_t address, const T &data) const;
 
 private:
+    enum class enCallConvention
+    {
+        ECC_CDECL = 1,
+        ECC_STDCALL,
+        ECC_THISCALL
+    };
+    struct ExternalCaller
+    {
+        uint32_t function_address;
+        uint32_t caller_address;
+        uint32_t argc;
+        enCallConvention cc;
+    };
+
     uint32_t get_process_id_by_process_name(const char *process_name) const;
+    uint32_t build_cdecl_caller(uint32_t address, uint32_t argc);
+    uint32_t build_stdcall_caller(uint32_t address, uint32_t argc);
+    uint32_t build_thiscall_caller(uint32_t address, uint32_t argc);
+    void send_external_caller_arguments(const ExternalCaller &ec, uint32_t args,
+                                        ...);
+    void send_thiscall_this_ptr(const ExternalCaller &ec, uint32_t this_ptr);
+    uint32_t call_external_function(const ExternalCaller &ec) const;
 
     void *_handle;
     std::unordered_map<uint32_t, uint32_t> _allocated_memory;
+    std::unordered_map<uint32_t, ExternalCaller> _callers;
 };
 
 template <typename T> inline T ExternalProcess::read(uint32_t address) const

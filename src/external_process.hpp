@@ -23,6 +23,8 @@ public:
     void write_buf(uint32_t address, uint32_t size, const void *data) const;
     uint32_t alloc(const uint32_t size);
     void free(uint32_t address);
+    uint32_t call_cdecl_function(uint32_t address, uint32_t argc, uint32_t args,
+                                 ...);
 
 private:
     uint32_t get_process_id_by_process_name(const char *process_name) const;

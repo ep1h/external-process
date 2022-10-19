@@ -114,6 +114,18 @@ TEST_BEGIN(stdcall_caller)
     terminate_external_process_simulator();
 TEST_END
 
+TEST_BEGIN(thiscall_caller)
+    uint32_t thiscall_sum_func_addr =
+        run_external_process_simulator("sum_thiscall");
+    uint32_t class_obj_address = run_external_process_simulator("obj");
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+    uint32_t sum = ep.call_thiscall_function(thiscall_sum_func_addr,
+                                             class_obj_address, 2, 5, 5);
+    EXPECT(sum, 10);
+    terminate_external_process_simulator();
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
-          alloc_free, cdecl_caller, stdcall_caller);
+          alloc_free, cdecl_caller, stdcall_caller, thiscall_caller);

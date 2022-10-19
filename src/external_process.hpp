@@ -27,6 +27,8 @@ public:
                                  ...);
     uint32_t call_stdcall_function(uint32_t address, uint32_t argc,
                                    uint32_t args, ...);
+    uint32_t call_thiscall_function(uint32_t address, uint32_t this_ptr,
+                                    uint32_t argc, uint32_t args, ...);
 
 private:
     uint32_t get_process_id_by_process_name(const char *process_name) const;

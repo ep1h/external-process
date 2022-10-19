@@ -105,6 +105,16 @@ TEST_BEGIN(cdecl_caller)
     terminate_external_process_simulator();
 TEST_END
 
+TEST_BEGIN(stdcall_caller)
+    uint32_t stdcall_sum_func_addr =
+        run_external_process_simulator("sum_stdcall");
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+    uint32_t sum = ep.call_stdcall_function(stdcall_sum_func_addr, 2, 4, 3);
+    EXPECT(sum, 7);
+    terminate_external_process_simulator();
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
-          alloc_free, cdecl_caller);
+          alloc_free, cdecl_caller, stdcall_caller);

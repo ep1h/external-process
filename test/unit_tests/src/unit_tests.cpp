@@ -146,7 +146,28 @@ TEST_BEGIN(jmp_injector)
     terminate_external_process_simulator();
 TEST_END
 
+TEST_BEGIN(push_ret_injector)
+    uint32_t stdcall_sum_func_addr =
+        run_external_process_simulator("sum_stdcall");
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+
+    /* Add 2 to each argument */
+    uint8_t injected_bytes[] =
+    {
+        0x83, 0x44, 0x24, 0x04, 0x02, /* add DWORD PTR [esp0x4],0x2 */
+        0x83, 0x44, 0x24, 0x08, 0x02, /* add DWORD PTR [esp0x8],0x2 */
+    };
+    ep.inject_code_using_push_ret(stdcall_sum_func_addr, injected_bytes,
+                                  sizeof(injected_bytes), 6);
+    uint32_t sum = ep.call_stdcall_function(stdcall_sum_func_addr, 2, 0, 0);
+    EXPECT(sum, 4);
+    sum = ep.call_stdcall_function(stdcall_sum_func_addr, 2, 1, 2);
+    EXPECT(sum, 7);
+    terminate_external_process_simulator();
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
           alloc_free, cdecl_caller, stdcall_caller, thiscall_caller,
-          jmp_injector);
+          jmp_injector, push_ret_injector);

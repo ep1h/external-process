@@ -78,3 +78,23 @@ void terminate_external_process_simulator(void)
         bkg_sim_process_handle = nullptr;
     }
 }
+
+const stSimulatorInfo *get_sim_info(void)
+{
+    static stSimulatorInfo *si_ptr = nullptr;
+    if (si_ptr == nullptr)
+    {
+        static stSimulatorInfo si;
+        si.sum_cdecl_function_address =
+            run_external_process_simulator("sum_cdecl");
+        si.sum_stdcall_function_address =
+            run_external_process_simulator("sum_stdcall");
+        si.sum_thiscall_function_address =
+            run_external_process_simulator("sum_thiscall");
+        si.buffer_address =
+            run_external_process_simulator("buffer");
+        si.buffer_size = run_external_process_simulator("buffer_size");
+        si_ptr = &si;
+    }
+    return si_ptr;
+}

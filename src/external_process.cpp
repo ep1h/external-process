@@ -386,6 +386,94 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
 }
 
 /**-----------------------------------------------------------------------------
+; @inject_code_using_push_ret
+;
+; @brief
+;   Injects @bytes_size bytes of code from the @bytes argument into remote
+;   process at @address address.
+;
+; @param address                An address where code should be injected.
+; @param bytes                  Code bytes to be injected at @address address.
+; @param bytes_size             Number of the bytes to be injected.
+; @param overwrite_bytes_size   The number of original bytes to be overwritten
+;                               and executed after injected code.
+;
+; @return allocated buffer address @allocated_buf
+-----------------------------------------------------------------------------**/
+uint32_t ExternalProcess::inject_code_using_push_ret(
+    uint32_t address, const uint8_t *bytes, uint32_t bytes_size,
+    uint32_t overwrite_bytes_size)
+{
+    if (overwrite_bytes_size < 6) /* should be at least 6 bytes for push-ret */
+    {
+        return 0;
+    }
+    /* Set vp */
+    DWORD old_protect = 0;
+    VirtualProtectEx(static_cast<HANDLE>(_handle),
+                     reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
+                     PAGE_EXECUTE_READWRITE, &old_protect);
+
+    /* Store original bytes to be overwritten */
+    uint8_t *original_bytes = new uint8_t[overwrite_bytes_size];
+    read_buf(address, overwrite_bytes_size, original_bytes);
+
+    /* Calculate whole remote process buffer size */
+    uint32_t allocated_buf_size = bytes_size + overwrite_bytes_size + 5;
+
+    /* Allocate memory for remote buffer */
+    uint32_t allocated_buf = alloc(allocated_buf_size);
+
+    /* Create local buffer to be sent in remote process' buf */
+    uint8_t *local_buf = new uint8_t[allocated_buf_size];
+
+    /* Fill local buffer with data */
+    /* Put injected bytes in local buffer */
+    memcpy(local_buf, bytes, bytes_size);
+
+    /* Put original bytes in local buffer */
+    memcpy(local_buf + bytes_size, original_bytes, overwrite_bytes_size);
+
+    /* Put jmp instruction in local buffer */
+    local_buf[bytes_size + overwrite_bytes_size] = 0xE9;
+
+    /* Put jmp address in local buffer */
+    *reinterpret_cast<uint32_t *>(
+        &(local_buf[bytes_size + overwrite_bytes_size + 1])) =
+        (address + overwrite_bytes_size) -
+        (allocated_buf + bytes_size + overwrite_bytes_size) - 5;
+
+    /* Write local buffer in remote process' allocated buffer */
+    write_buf(allocated_buf, allocated_buf_size, local_buf);
+
+    /* Overwrite original bytes */
+    /* Don't need local_buf anymore, so it can be used here */
+    uint32_t nops_number = overwrite_bytes_size - 6;
+    if (nops_number > 0)
+    {
+        memset(local_buf, 0x90, nops_number); /* Put nops in local buffer */
+    }
+    local_buf[nops_number] = 0x68; /* Put push instruction in local buffer */
+    /* Put return address in local buffer */
+    *reinterpret_cast<uint32_t *>(&(local_buf[nops_number + 1])) =
+        allocated_buf;
+    /* Put ret instruction in local buffer */
+    local_buf[nops_number + 5] = 0xC3;
+
+    /* Write local buffer in remote process */
+    write_buf(address, overwrite_bytes_size, local_buf);
+
+    /* Restore vp */
+    VirtualProtectEx(static_cast<HANDLE>(_handle),
+                     reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
+                     old_protect, &old_protect);
+
+    delete[] original_bytes;
+    delete[] local_buf;
+    return allocated_buf;
+}
+
+/**-----------------------------------------------------------------------------
 ; @get_process_id_by_process_name
 ;
 ; @brief

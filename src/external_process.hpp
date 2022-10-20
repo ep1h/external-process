@@ -32,6 +32,9 @@ public:
     uint32_t inject_code_using_jmp(uint32_t address, const uint8_t *bytes,
                                    uint32_t bytes_size,
                                    uint32_t overwrite_bytes_size);
+    uint32_t inject_code_using_push_ret(uint32_t address, const uint8_t *bytes,
+                                        uint32_t bytes_size,
+                                        uint32_t overwrite_bytes_size);
     template <typename T> T read(uint32_t address) const;
     template <typename T> void write(uint32_t address, const T &data) const;
 

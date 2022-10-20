@@ -378,8 +378,7 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
     /* Restore vp */
     VirtualProtectEx(static_cast<HANDLE>(_handle),
                      reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
-                     old_protect,
-                     &old_protect);
+                     old_protect, &old_protect);
 
     delete[] original_bytes;
     delete[] local_buf;

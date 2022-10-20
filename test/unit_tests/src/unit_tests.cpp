@@ -184,7 +184,31 @@ TEST_BEGIN(push_ret_injector)
 }
 TEST_END
 
+TEST_BEGIN(uninject)
+{
+    uint32_t cdecl_sum_func_addr = run_external_process_simulator("sum_cdecl");
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+
+    /* Add 5 to each argument */
+    uint8_t injected_bytes[] = {
+        0x83, 0x44, 0x24, 0x04, 0x05, /* add DWORD PTR [esp0x4],0x5 */
+        0x83, 0x44, 0x24, 0x08, 0x05, /* add DWORD PTR [esp0x8],0x5 */
+    };
+    ep.inject_code(cdecl_sum_func_addr, injected_bytes, sizeof(injected_bytes),
+                   6, P1ExternalProcess::enInjectionType::EIT_JMP);
+    uint32_t sum = ep.call_cdecl_function(cdecl_sum_func_addr, 2, 0, 0);
+    EXPECT(sum, 10);
+    sum = ep.call_cdecl_function(cdecl_sum_func_addr, 2, 6, 4);
+    EXPECT(sum, 20);
+    ep.uninject_code(cdecl_sum_func_addr);
+    sum = ep.call_cdecl_function(cdecl_sum_func_addr, 2, 6, 4);
+    EXPECT(sum, 10);
+    terminate_external_process_simulator();
+}
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
           alloc_free, cdecl_caller, stdcall_caller, thiscall_caller,
-          jmp_injector, push_ret_injector);
+          jmp_injector, push_ret_injector, uninject);

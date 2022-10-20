@@ -23,8 +23,19 @@
    performed based on interaction with this process. */
 extern const char test_application[];
 
+struct stSimulatorInfo
+{
+    uint32_t sum_cdecl_function_address;
+    uint32_t sum_stdcall_function_address;
+    uint32_t sum_thiscall_function_address;
+    uint32_t buffer_address;
+    uint32_t buffer_size;
+    uint32_t class_object_address;
+};
+
 uint32_t run_external_process_simulator(void);
 uint32_t run_external_process_simulator(const char *arg);
 void terminate_external_process_simulator(void);
+const stSimulatorInfo *get_sim_info(void);
 
 #endif /* TEST_UTILS_HPP */

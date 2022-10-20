@@ -26,8 +26,8 @@ TEST_BEGIN(get_process_id_by_existent_process_name)
 TEST_END
 
 TEST_BEGIN(read_buf)
-    uint32_t buf_addr = run_external_process_simulator("buffer");
-    uint32_t buf_size = run_external_process_simulator("buffer_size");
+    uint32_t buf_addr = get_sim_info()->buffer_address;
+    uint32_t buf_size = get_sim_info()->buffer_size;
     uint8_t *buf = new uint8_t[buf_size];
     run_external_process_simulator();
     ExternalProcess ep(test_application);
@@ -41,8 +41,8 @@ TEST_BEGIN(read_buf)
 TEST_END
 
 TEST_BEGIN(write_buf)
-    uint32_t buf_addr = run_external_process_simulator("buffer");
-    uint32_t buf_size = run_external_process_simulator("buffer_size");
+    uint32_t buf_addr = get_sim_info()->buffer_address;
+    uint32_t buf_size = get_sim_info()->buffer_size;
     uint8_t *buf = new uint8_t[buf_size];
     memset(buf, 0xBB, buf_size);
     run_external_process_simulator();
@@ -96,7 +96,7 @@ TEST_BEGIN(alloc_free)
 TEST_END
 
 TEST_BEGIN(cdecl_caller)
-    uint32_t cdecl_sum_func_addr = run_external_process_simulator("sum_cdecl");
+    uint32_t cdecl_sum_func_addr = get_sim_info()->sum_cdecl_function_address;
     run_external_process_simulator();
     ExternalProcess ep(test_application);
     uint32_t sum = ep.call_cdecl_function(cdecl_sum_func_addr, 2, 2, 4);
@@ -106,7 +106,7 @@ TEST_END
 
 TEST_BEGIN(stdcall_caller)
     uint32_t stdcall_sum_func_addr =
-        run_external_process_simulator("sum_stdcall");
+        get_sim_info()->sum_stdcall_function_address;
     run_external_process_simulator();
     ExternalProcess ep(test_application);
     uint32_t sum = ep.call_stdcall_function(stdcall_sum_func_addr, 2, 4, 3);
@@ -116,8 +116,8 @@ TEST_END
 
 TEST_BEGIN(thiscall_caller)
     uint32_t thiscall_sum_func_addr =
-        run_external_process_simulator("sum_thiscall");
-    uint32_t class_obj_address = run_external_process_simulator("obj");
+        get_sim_info()->sum_thiscall_function_address;
+    uint32_t class_obj_address = get_sim_info()->class_object_address;
     run_external_process_simulator();
     ExternalProcess ep(test_application);
     uint32_t sum = ep.call_thiscall_function(thiscall_sum_func_addr,
@@ -127,7 +127,7 @@ TEST_BEGIN(thiscall_caller)
 TEST_END
 
 TEST_BEGIN(jmp_injector)
-    uint32_t cdecl_sum_func_addr = run_external_process_simulator("sum_cdecl");
+    uint32_t cdecl_sum_func_addr =  get_sim_info()->sum_cdecl_function_address;
     run_external_process_simulator();
     ExternalProcess ep(test_application);
 
@@ -148,7 +148,7 @@ TEST_END
 
 TEST_BEGIN(push_ret_injector)
     uint32_t stdcall_sum_func_addr =
-        run_external_process_simulator("sum_stdcall");
+        get_sim_info()->sum_stdcall_function_address;
     run_external_process_simulator();
     ExternalProcess ep(test_application);
 
@@ -168,7 +168,7 @@ TEST_BEGIN(push_ret_injector)
 TEST_END
 
 TEST_BEGIN(uninject)
-    uint32_t cdecl_sum_func_addr = run_external_process_simulator("sum_cdecl");
+    uint32_t cdecl_sum_func_addr =  get_sim_info()->sum_cdecl_function_address;
     run_external_process_simulator();
     ExternalProcess ep(test_application);
 

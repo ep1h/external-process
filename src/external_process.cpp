@@ -338,6 +338,66 @@ void ExternalProcess::uninject_code(uint32_t address)
 }
 
 /**-----------------------------------------------------------------------------
+; @find_signature
+;
+; @brief
+;   Searches for a sequence of bytes in the memory area of the external process.
+;
+; @param address    The address from which to start the search.
+; @param size       The size of the memory area in which to search for the
+;                   signature.
+; @param signature  The byte sequence to be found.
+; @param mask       The mask to search by. The character 'x' is a complete
+;                   match. Characters other than 'x' ignore the corresponding
+;                   byte.
+;
+; @return
+;   The address of the first occurrence of @signature by mask @mask in memory
+;   area [@address ... @address + @size), or zero on unsuccessful search.
+;-----------------------------------------------------------------------------*/
+uint32_t ExternalProcess::find_signature(uint32_t address, uint32_t size,
+                                         const uint8_t *signature,
+                                         const char *mask) const
+{
+    if(!signature)
+    {
+        return 0;
+    }
+    if(!mask)
+    {
+        return 0;
+    }
+    if(strlen(mask) > size)
+    {
+        return 0;
+    }
+    uint8_t *buffer = new uint8_t[size];
+    read_buf(address, size, buffer);
+    uint32_t result = 0;
+    for (uint32_t i = 0; i <= size - strlen(mask); i++)
+    {
+        uint32_t mask_offset = 0;
+        while (mask[mask_offset])
+        {
+            if (mask[mask_offset] == 'x' &&
+                buffer[i + mask_offset] != signature[mask_offset])
+            {
+                mask_offset = 0;
+                break;
+            }
+            ++mask_offset;
+        }
+        if (mask_offset != 0)
+        {
+            result = address + i;
+            break;
+        }
+    }
+    delete[] buffer;
+    return result;
+}
+
+/**-----------------------------------------------------------------------------
 ; @get_process_id_by_process_name
 ;
 ; @brief

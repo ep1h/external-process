@@ -13,6 +13,20 @@
 
 using namespace P1ExternalProcess;
 
+typedef SHORT(__stdcall *tNtReadVirtualMemory)(
+    IN HANDLE ProcessHandle, IN PVOID BaseAddress, OUT PVOID buffer,
+    IN ULONG NumberOfBytesRead, OUT PULONG NumberOfBytesReaded OPTIONAL);
+static tNtReadVirtualMemory NtReadVirtualMemory =
+    (tNtReadVirtualMemory)GetProcAddress(LoadLibraryA("ntdll.dll"),
+                                         "NtReadVirtualMemory");
+
+typedef SHORT(__stdcall *tNtWriteVirtualMemory)(
+    IN HANDLE ProcessHandle, IN PVOID BaseAddress, IN PVOID buffer,
+    IN ULONG NumberOfBytesToWrite, OUT PULONG NumberOfBytesWritten OPTIONAL);
+static tNtWriteVirtualMemory NtWriteVirtualMemory =
+    (tNtWriteVirtualMemory)GetProcAddress(LoadLibraryA("ntdll.dll"),
+                                          "NtWriteVirtualMemory");
+
 /**-----------------------------------------------------------------------------
 ; @ExternalProcess
 ;
@@ -86,8 +100,11 @@ ExternalProcess::~ExternalProcess(void)
 void ExternalProcess::read_buf(uint32_t address, uint32_t size,
                                void *out_result) const
 {
-    ReadProcessMemory(static_cast<HANDLE>(_handle),
-                      reinterpret_cast<LPCVOID>(address), out_result, size, 0);
+    NtReadVirtualMemory(static_cast<HANDLE>(_handle),
+                        reinterpret_cast<PVOID>(address), out_result, size, 0);
+    // ReadProcessMemory(static_cast<HANDLE>(_handle),
+    //                   reinterpret_cast<LPCVOID>(address), out_result, size,
+    //                   0);
 }
 
 /**-----------------------------------------------------------------------------
@@ -100,8 +117,11 @@ void ExternalProcess::read_buf(uint32_t address, uint32_t size,
 void ExternalProcess::write_buf(uint32_t address, uint32_t size,
                                 const void *data) const
 {
-    WriteProcessMemory(static_cast<HANDLE>(_handle),
-                       reinterpret_cast<LPVOID>(address), data, size, 0);
+    NtWriteVirtualMemory(static_cast<HANDLE>(_handle),
+                         reinterpret_cast<LPVOID>(address),
+                         const_cast<PVOID>(data), size, 0);
+    // WriteProcessMemory(static_cast<HANDLE>(_handle),
+    //                    reinterpret_cast<LPVOID>(address), data, size, 0);
 }
 
 /**-----------------------------------------------------------------------------
@@ -359,15 +379,15 @@ uint32_t ExternalProcess::find_signature(uint32_t address, uint32_t size,
                                          const uint8_t *signature,
                                          const char *mask) const
 {
-    if(!signature)
+    if (!signature)
     {
         return 0;
     }
-    if(!mask)
+    if (!mask)
     {
         return 0;
     }
-    if(strlen(mask) > size)
+    if (strlen(mask) > size)
     {
         return 0;
     }

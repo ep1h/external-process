@@ -208,7 +208,64 @@ TEST_BEGIN(uninject)
 }
 TEST_END
 
+TEST_BEGIN(signature_scanner)
+{
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+
+    uint32_t buf_address = get_sim_info()->buffer_address;
+    uint32_t buf_size = get_sim_info()->buffer_size;
+
+    /* Search for signature in the begin */
+    const char *mask_1 = "xxxx";
+    const uint8_t sig_1[] = {0x00, 0x01, 0x02, 0x03};
+    uint32_t res = ep.find_signature(buf_address, buf_size, sig_1, mask_1);
+    EXPECT(res, buf_address);
+
+    /* Search for signature in the end */
+    const uint8_t sig_2[] = {0x1C, 0x1D, 0x1E, 0x1F};
+    res = ep.find_signature(buf_address, buf_size, sig_2, mask_1);
+    EXPECT(res, buf_address + buf_size - 4);
+
+    /* Search for signature in the ~middle */
+    const uint8_t sig_3[] = {0x10, 0x11, 0x12, 0x13};
+    res = ep.find_signature(buf_address, buf_size, sig_3, mask_1);
+    EXPECT(res, buf_address + 0x10);
+
+    /* Search for false signature */
+    const uint8_t sig_4[] = {0xFF, 0xBA, 0xDD, 0x11};
+    res = ep.find_signature(buf_address, buf_size, sig_4, mask_1);
+    EXPECT(res, 0);
+
+    /* Search for signature ignoring bytes by the mask */
+    const uint8_t sig_5[] = {0x05, 0xBA, 0xAD, 0x08};
+    const char *mask_2 = "x??x";
+    res = ep.find_signature(buf_address, buf_size, sig_5, mask_2);
+    EXPECT(res, buf_address + 0x05);
+
+    /* Use the previous signature, but mask is shorter than signature */
+    const char *mask_3 = "x??";
+    res = ep.find_signature(buf_address, buf_size, sig_5, mask_3);
+    EXPECT(res, buf_address + 0x05);
+
+    /* Use the previous signature, but mask is longer than signature */
+    const char *mask_4 = "x??xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
+    res = ep.find_signature(buf_address, buf_size, sig_5, mask_4);
+    EXPECT(res, 0);
+
+    /* Nulls */
+    res = ep.find_signature(buf_address, buf_size, 0, mask_1);
+    EXPECT(res, 0);
+    res = ep.find_signature(buf_address, buf_size, sig_3, 0);
+    EXPECT(res, 0);
+    res = ep.find_signature(buf_address, 0, sig_3, mask_1);
+    EXPECT(res, 0);
+
+    terminate_external_process_simulator();
+}
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
           alloc_free, cdecl_caller, stdcall_caller, thiscall_caller,
-          jmp_injector, push_ret_injector, uninject);
+          jmp_injector, push_ret_injector, uninject, signature_scanner);

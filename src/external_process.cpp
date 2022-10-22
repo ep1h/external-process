@@ -167,7 +167,7 @@ void ExternalProcess::free(uint32_t address)
 ;   functions of 'void' type).
 ;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
-                                              uint32_t args, ...)
+                                              ...)
 {
     if (_callers.find(address) == _callers.end())
     {
@@ -180,7 +180,7 @@ uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
     }
     // TODO: Optimize: store last args and send new only if there are diffs.
     send_external_caller_arguments(_callers[address],
-                                   reinterpret_cast<uint32_t>(&args));
+                                   reinterpret_cast<uint32_t>(&argc) + 4);
 
     return call_external_function(_callers[address]);
 }
@@ -205,7 +205,7 @@ uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
 ;   functions of 'void' type).
 ;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
-                                                uint32_t args, ...)
+                                                ...)
 {
     if (_callers.find(address) == _callers.end())
     {
@@ -218,7 +218,7 @@ uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
     }
     // TODO: Optimize: store last args and send new only if there are diffs.
     send_external_caller_arguments(_callers[address],
-                                   reinterpret_cast<uint32_t>(&args));
+                                   reinterpret_cast<uint32_t>(&argc) + 4);
 
     return call_external_function(_callers[address]);
 }
@@ -246,8 +246,7 @@ uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
 ;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::call_thiscall_function(uint32_t address,
                                                  uint32_t this_ptr,
-                                                 uint32_t argc, uint32_t args,
-                                                 ...)
+                                                 uint32_t argc, ...)
 {
     if (_callers.find(address) == _callers.end())
     {
@@ -260,7 +259,7 @@ uint32_t ExternalProcess::call_thiscall_function(uint32_t address,
     }
     // TODO: Optimize: store last args and send new only if there are diffs.
     send_external_caller_arguments(_callers[address],
-                                   reinterpret_cast<uint32_t>(&args));
+                                   reinterpret_cast<uint32_t>(&argc) + 4);
     send_thiscall_this_ptr(_callers[address], this_ptr);
     return call_external_function(_callers[address]);
 }

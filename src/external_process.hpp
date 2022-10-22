@@ -37,6 +37,8 @@ public:
                      uint32_t bytes_size, uint32_t overwrite_bytes_size,
                      enInjectionType it);
     void uninject_code(uint32_t address);
+    uint32_t find_signature(uint32_t address, uint32_t size,
+                            const uint8_t *signature, const char *mask) const;
     template <typename T> T read(uint32_t address) const;
     template <typename T> void write(uint32_t address, const T &data) const;
 

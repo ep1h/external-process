@@ -168,9 +168,13 @@ void ExternalProcess::write_buf(uint32_t address, uint32_t size,
 uint32_t ExternalProcess::alloc(const uint32_t size)
 {
     // TODO: Add rights as function argument.
-    void *address =
-        VirtualAllocEx(static_cast<HANDLE>(_handle), NULL, size,
-                       MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    // void *address =
+    //    VirtualAllocEx(static_cast<HANDLE>(_handle), NULL, size,
+    //                   MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
+    void *address = NULL;
+    SIZE_T sz = size;
+    NtAllocateVirtualMemory(static_cast<HANDLE>(_handle), &address, 0, &sz,
+                            MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     if (address != NULL)
     {
         _allocated_memory[reinterpret_cast<uint32_t>(address)] = size;
@@ -190,8 +194,12 @@ void ExternalProcess::free(uint32_t address)
     auto result = _allocated_memory.find(address);
     if (result != _allocated_memory.end())
     {
-        VirtualFreeEx((HANDLE)_handle, reinterpret_cast<void *>(address),
-                      result->second, MEM_RELEASE);
+        // VirtualFreeEx((HANDLE)_handle, reinterpret_cast<void *>(address),
+        //               result->second, MEM_RELEASE);
+        PVOID addr = reinterpret_cast<PVOID>(address);
+        SIZE_T sz = 0;
+        NtFreeVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                            MEM_RELEASE);
         _allocated_memory.erase(address);
     }
 }

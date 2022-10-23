@@ -387,11 +387,16 @@ void ExternalProcess::uninject_code(uint32_t address)
         // TODO: Test set-restore vp.
 
         /* Set vp */
-        DWORD old_protect = 0;
-        VirtualProtectEx(static_cast<HANDLE>(_handle),
-                         reinterpret_cast<LPVOID>(ici->first),
-                         ici->second.overwritten_bytes_number,
-                         PAGE_EXECUTE_READWRITE, &old_protect);
+        // DWORD old_protect = 0;
+        // VirtualProtectEx(static_cast<HANDLE>(_handle),
+        //                  reinterpret_cast<LPVOID>(ici->first),
+        //                  ici->second.overwritten_bytes_number,
+        //                  PAGE_EXECUTE_READWRITE, &old_protect);
+        ULONG old_protect = 0;
+        PVOID addr = reinterpret_cast<PVOID>(ici->first);
+        ULONG sz = ici->second.overwritten_bytes_number;
+        NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                               PAGE_EXECUTE_READWRITE, &old_protect);
 
         /* Create buffer to store original bytes */
         uint8_t *original_bytes =
@@ -407,9 +412,12 @@ void ExternalProcess::uninject_code(uint32_t address)
                   original_bytes);
 
         /* Restore vp */
-        VirtualProtectEx(
-            static_cast<HANDLE>(_handle), reinterpret_cast<LPVOID>(ici->first),
-            ici->second.overwritten_bytes_number, old_protect, &old_protect);
+        // VirtualProtectEx(
+        //     static_cast<HANDLE>(_handle),
+        //     reinterpret_cast<LPVOID>(ici->first),
+        //     ici->second.overwritten_bytes_number, old_protect, &old_protect);
+        NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                               old_protect, &old_protect);
 
         delete[] original_bytes;
         free(ici->second.allocated_buffer);
@@ -881,10 +889,15 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
         return 0;
     }
     /* Set vp */
-    DWORD old_protect = 0;
-    VirtualProtectEx(static_cast<HANDLE>(_handle),
-                     reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
-                     PAGE_EXECUTE_READWRITE, &old_protect);
+    // DWORD old_protect = 0;
+    // VirtualProtectEx(static_cast<HANDLE>(_handle),
+    //                  reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
+    //                  PAGE_EXECUTE_READWRITE, &old_protect);
+    ULONG old_protect = 0;
+    PVOID addr = reinterpret_cast<PVOID>(address);
+    ULONG sz = overwrite_bytes_size;
+    NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                           PAGE_EXECUTE_READWRITE, &old_protect);
 
     /* Store original bytes to be overwritten */
     uint8_t *original_bytes = new uint8_t[overwrite_bytes_size];
@@ -935,9 +948,11 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
     write_buf(address, overwrite_bytes_size, local_buf);
 
     /* Restore vp */
-    VirtualProtectEx(static_cast<HANDLE>(_handle),
-                     reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
-                     old_protect, &old_protect);
+    // VirtualProtectEx(static_cast<HANDLE>(_handle),
+    //                  reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
+    //                  old_protect, &old_protect);
+    NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                           old_protect, &old_protect);
 
     delete[] original_bytes;
     delete[] local_buf;
@@ -968,10 +983,15 @@ uint32_t ExternalProcess::inject_code_using_push_ret(
         return 0;
     }
     /* Set vp */
-    DWORD old_protect = 0;
-    VirtualProtectEx(static_cast<HANDLE>(_handle),
-                     reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
-                     PAGE_EXECUTE_READWRITE, &old_protect);
+    // DWORD old_protect = 0;
+    // VirtualProtectEx(static_cast<HANDLE>(_handle),
+    //                  reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
+    //                  PAGE_EXECUTE_READWRITE, &old_protect);
+    ULONG old_protect = 0;
+    PVOID addr = reinterpret_cast<PVOID>(address);
+    ULONG sz = overwrite_bytes_size;
+    NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                           PAGE_EXECUTE_READWRITE, &old_protect);
 
     /* Store original bytes to be overwritten */
     uint8_t *original_bytes = new uint8_t[overwrite_bytes_size];
@@ -1023,9 +1043,11 @@ uint32_t ExternalProcess::inject_code_using_push_ret(
     write_buf(address, overwrite_bytes_size, local_buf);
 
     /* Restore vp */
-    VirtualProtectEx(static_cast<HANDLE>(_handle),
-                     reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
-                     old_protect, &old_protect);
+    // VirtualProtectEx(static_cast<HANDLE>(_handle),
+    //                  reinterpret_cast<LPVOID>(address), overwrite_bytes_size,
+    //                  old_protect, &old_protect);
+    NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                           old_protect, &old_protect);
 
     delete[] original_bytes;
     delete[] local_buf;

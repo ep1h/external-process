@@ -128,8 +128,11 @@ ExternalProcess::~ExternalProcess(void)
 void ExternalProcess::read_buf(uint32_t address, uint32_t size,
                                void *out_result) const
 {
-    ReadProcessMemory(static_cast<HANDLE>(_handle),
-                      reinterpret_cast<LPCVOID>(address), out_result, size, 0);
+    // ReadProcessMemory(static_cast<HANDLE>(_handle),
+    //                   reinterpret_cast<LPCVOID>(address), out_result, size,
+    //                   0);
+    NtReadVirtualMemory(static_cast<HANDLE>(_handle),
+                        reinterpret_cast<PVOID>(address), out_result, size, 0);
 }
 
 /**-----------------------------------------------------------------------------
@@ -142,8 +145,12 @@ void ExternalProcess::read_buf(uint32_t address, uint32_t size,
 void ExternalProcess::write_buf(uint32_t address, uint32_t size,
                                 const void *data) const
 {
-    WriteProcessMemory(static_cast<HANDLE>(_handle),
-                       reinterpret_cast<LPVOID>(address), data, size, 0);
+    // WriteProcessMemory(static_cast<HANDLE>(_handle),
+    //                    reinterpret_cast<LPVOID>(address), data, size, 0);
+
+    NtWriteVirtualMemory(static_cast<HANDLE>(_handle),
+                         reinterpret_cast<PVOID>(address),
+                         const_cast<PVOID>(data), size, 0);
 }
 
 /**-----------------------------------------------------------------------------

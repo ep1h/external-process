@@ -13,6 +13,48 @@
 
 using namespace P1ExternalProcess;
 
+typedef NTSTATUS(NTAPI *tNtReadVirtualMemory)(
+    IN HANDLE ProcessHandle, IN PVOID BaseAddress, OUT PVOID buffer,
+    IN ULONG NumberOfBytesRead, OUT PULONG NumberOfBytesReaded OPTIONAL);
+
+typedef NTSTATUS(NTAPI *tNtWriteVirtualMemory)(
+    IN HANDLE ProcessHandle, IN PVOID BaseAddress, IN PVOID buffer,
+    IN ULONG NumberOfBytesToWrite, OUT PULONG NumberOfBytesWritten OPTIONAL);
+
+typedef NTSTATUS(NTAPI *tNtAllocateVirtualMemory)(
+    IN HANDLE ProcessHandle, IN OUT PVOID *BaseAddress, IN ULONG_PTR ZeroBits,
+    IN OUT PSIZE_T RegionSize, IN ULONG AllocationType, IN ULONG Protect);
+
+typedef NTSTATUS(NTAPI *tNtFreeVirtualMemory)(IN HANDLE ProcessHandle,
+                                              IN OUT PVOID *BaseAddress,
+                                              IN OUT PSIZE_T RegionSize,
+                                              IN ULONG FreeType);
+
+typedef NTSTATUS(NTAPI *tNtProtectVirtualMemory)(
+    IN HANDLE ProcessHandle, IN OUT PVOID *BaseAddress,
+    IN OUT PULONG NumberOfBytesToProtect, IN ULONG NewAccessProtection,
+    OUT PULONG OldAccessProtection);
+
+static tNtReadVirtualMemory NtReadVirtualMemory =
+    (tNtReadVirtualMemory)(void *)GetProcAddress(LoadLibrary("ntdll.dll"),
+                                                 "NtReadVirtualMemory");
+
+static tNtWriteVirtualMemory NtWriteVirtualMemory =
+    (tNtWriteVirtualMemory)(void *)GetProcAddress(LoadLibrary("ntdll.dll"),
+                                                  "NtWriteVirtualMemory");
+
+static tNtAllocateVirtualMemory NtAllocateVirtualMemory =
+    (tNtAllocateVirtualMemory)(void *)GetProcAddress(LoadLibrary("ntdll.dll"),
+                                                     "NtAllocateVirtualMemory");
+
+static tNtFreeVirtualMemory NtFreeVirtualMemory =
+    (tNtFreeVirtualMemory)(void *)GetProcAddress(LoadLibrary("ntdll.dll"),
+                                                 "NtFreeVirtualMemory");
+
+static tNtProtectVirtualMemory NtProtectVirtualMemory =
+    (tNtProtectVirtualMemory)(void *)GetProcAddress(LoadLibrary("ntdll.dll"),
+                                                    "NtProtectVirtualMemory");
+
 /**-----------------------------------------------------------------------------
 ; @ExternalProcess
 ;

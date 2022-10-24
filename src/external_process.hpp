@@ -29,6 +29,7 @@ public:
     void write_buf(uint32_t address, uint32_t size, const void *data) const;
     uint32_t alloc(const uint32_t size);
     void free(uint32_t address);
+    uint32_t get_module_address(const char *module_name);
     uint32_t call_cdecl_function(uint32_t address, uint32_t argc, ...);
     uint32_t call_stdcall_function(uint32_t address, uint32_t argc, ...);
     uint32_t call_thiscall_function(uint32_t address, uint32_t this_ptr,

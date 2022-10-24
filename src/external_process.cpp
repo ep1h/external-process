@@ -205,6 +205,47 @@ void ExternalProcess::free(uint32_t address)
 }
 
 /**-----------------------------------------------------------------------------
+; @get_module_address
+;
+; @brief
+;   Return address of module named @module_name (if exists).
+;   Otherwise returns zero.
+;
+; @param module_name    Module name.
+;
+; @return
+;   Module address if success.
+;   0 if failire.
+;-----------------------------------------------------------------------------*/
+uint32_t ExternalProcess::get_module_address(const char *module_name)
+{
+    // TODO: Don't call GetProcessId function. Store process id in constructor.
+    // TODO: Store modules addresses in map.
+    uint32_t result = 0;
+    HANDLE snapshot_handle = CreateToolhelp32Snapshot(
+        TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(_handle));
+    if (snapshot_handle != INVALID_HANDLE_VALUE)
+    {
+        MODULEENTRY32 module_entry;
+        module_entry.dwSize = sizeof(module_entry);
+        if (Module32First(snapshot_handle, &module_entry))
+        {
+            do
+            {
+                if (!_strcmpi(module_entry.szModule, module_name))
+                {
+                    result =
+                        reinterpret_cast<uint32_t>(module_entry.modBaseAddr);
+                    break;
+                }
+            } while (Module32Next(snapshot_handle, &module_entry));
+        }
+    }
+    CloseHandle(snapshot_handle);
+    return result;
+}
+
+/**-----------------------------------------------------------------------------
 ; @call_cdecl_function
 ;
 ; @brief

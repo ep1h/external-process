@@ -265,7 +265,23 @@ TEST_BEGIN(signature_scanner)
 }
 TEST_END
 
+TEST_BEGIN(get_module_name)
+{
+    run_external_process_simulator();
+    ExternalProcess ep(test_application);
+
+    EXPECT_NOT_ZERO(ep.get_module_address(test_application));
+    EXPECT_NOT_ZERO(ep.get_module_address("ntdll.dll"));
+    EXPECT_ZERO(ep.get_module_address("!@#$%^&*()_"));
+    EXPECT_ZERO(ep.get_module_address(""));
+    EXPECT_ZERO(ep.get_module_address(NULL));
+
+    terminate_external_process_simulator();
+}
+TEST_END
+
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
           alloc_free, cdecl_caller, stdcall_caller, thiscall_caller,
-          jmp_injector, push_ret_injector, uninject, signature_scanner);
+          jmp_injector, push_ret_injector, uninject, signature_scanner,
+          get_module_name);

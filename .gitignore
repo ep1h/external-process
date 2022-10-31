@@ -18,3 +18,11 @@
 /test/external_process_simulator/*
 !/test/external_process_simulator/src
 !/test/external_process_simulator/Makefile
+#examples
+#FlatOut 2
+!/examples
+/examples/*
+!/examples/flatout_2_trainer
+/examples/flatout_2_trainer/*
+!/examples/flatout_2_trainer/src
+!/examples/flatout_2_trainer/Makefile

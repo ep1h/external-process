@@ -668,6 +668,26 @@ uint32_t ExternalProcess::get_process_id_by_process_name(
     return result;
 }
 
+// TODO: Write description, test
+void ExternalProcess::provide_debug_access(void)
+{
+    WINAPI_CALL(OpenProcessToken(static_cast<HANDLE>(_handle),
+                                 TOKEN_ADJUST_PRIVILEGES, &_dbg_handle));
+
+    TOKEN_PRIVILEGES tp;
+    LUID luid;
+
+    WINAPI_CALL(LookupPrivilegeValue(NULL, SE_DEBUG_NAME, &luid));
+
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    tp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+
+    WINAPI_CALL(AdjustTokenPrivileges(_dbg_handle, FALSE, &tp,
+                                      sizeof(TOKEN_PRIVILEGES),
+                                      (PTOKEN_PRIVILEGES)NULL, (PDWORD)NULL));
+}
+
 /**-----------------------------------------------------------------------------
 ; @build_cdecl_caller
 ;

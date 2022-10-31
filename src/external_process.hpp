@@ -82,6 +82,7 @@ private:
         uint32_t allocated_buffer;
     };
     uint32_t get_process_id_by_process_name(const char *process_name) const;
+    void provide_debug_access(void);
     uint32_t build_cdecl_caller(uint32_t address, uint32_t argc);
     uint32_t build_stdcall_caller(uint32_t address, uint32_t argc);
     uint32_t build_thiscall_caller(uint32_t address, uint32_t argc);
@@ -97,6 +98,7 @@ private:
                                         uint32_t overwrite_bytes_size);
 
     void *_handle;
+    void *_dbg_handle;
     uint32_t _process_id;
     std::unordered_map<uint32_t, uint32_t> _allocated_memory;
     std::unordered_map<uint32_t, VirtualProtect> _virtual_protect;

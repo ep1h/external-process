@@ -11,6 +11,36 @@
 #include <windows.h>
 #include <tlhelp32.h>
 
+// #define SHOW_ERRORS
+
+#ifdef SHOW_ERRORS
+#include <iostream>
+#include <string>
+static std::string get_winapi_error_text(BOOL error_id);
+#define SHOW_WINAPI_ERROR(error_code)                                          \
+    std::cerr << std::endl << "Error: " << error_code << std::endl;            \
+    std::cerr << " File: " << __FILE__ << std::endl;                           \
+    std::cerr << " Line: " << std::dec << __LINE__ << std::endl;               \
+    std::cerr << " Function: " << __func__ << std::endl;                       \
+    std::cerr << " Message: " << get_winapi_error_text(error_code)             \
+              << std::endl                                                     \
+              << std::endl;
+
+#define WINAPI_CALL(call)                                                      \
+    call;                                                                      \
+    do                                                                         \
+    {                                                                          \
+        DWORD ________last_error = GetLastError();                             \
+        SetLastError(0);                                                       \
+        if (________last_error)                                                \
+        {                                                                      \
+            SHOW_WINAPI_ERROR(________last_error);                             \
+        }                                                                      \
+    } while (0)
+#else
+#define WINAPI_CALL(call) call
+#endif /* SHOW_ERRORS */
+
 using namespace P1ExternalProcess;
 
 typedef NTSTATUS(NTAPI *tNtReadVirtualMemory)(
@@ -54,6 +84,24 @@ static tNtFreeVirtualMemory NtFreeVirtualMemory =
 static tNtProtectVirtualMemory NtProtectVirtualMemory =
     (tNtProtectVirtualMemory)(void *)GetProcAddress(LoadLibrary("ntdll.dll"),
                                                     "NtProtectVirtualMemory");
+
+#ifdef SHOW_ERRORS
+static std::string get_winapi_error_text(BOOL error_id)
+{
+    if (!error_id)
+        return "";
+
+    LPSTR error_msg_buffer = nullptr;
+    size_t size = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL, error_id, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (LPSTR)&error_msg_buffer, 0, NULL);
+    std::string error_msg(error_msg_buffer, size);
+    LocalFree(error_msg_buffer);
+    return error_msg;
+}
+#endif /* SHOW_ERRORS */
 
 /**-----------------------------------------------------------------------------
 ; @ExternalProcess

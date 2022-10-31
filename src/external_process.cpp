@@ -107,23 +107,12 @@ static std::string get_winapi_error_text(BOOL error_id)
 ; @ExternalProcess
 ;
 ; @brief
-;   Constructor. This constructor assigns @process_handle to @_handle field.
-;-----------------------------------------------------------------------------*/
-ExternalProcess::ExternalProcess(void *process_handle) : _handle(process_handle)
-{
-}
-
-/**-----------------------------------------------------------------------------
-; @ExternalProcess
-;
-; @brief
 ;   Constructor. This constructor takes a process id @process_id, gets the
-;   process handle id using OpenProcess method and delegates object creation to
-;   the constructor that takes a process handle.
+;   process handle using OpenProcess method and assigns it to @_handle field.
 ;-----------------------------------------------------------------------------*/
-ExternalProcess::ExternalProcess(uint32_t process_id)
-    : ExternalProcess(OpenProcess(PROCESS_ALL_ACCESS, FALSE, process_id))
+ExternalProcess::ExternalProcess(uint32_t process_id) : _process_id(process_id)
 {
+    _handle = WINAPI_CALL(OpenProcess(PROCESS_ALL_ACCESS, FALSE, process_id));
 }
 
 /**-----------------------------------------------------------------------------
@@ -349,11 +338,10 @@ void ExternalProcess::restore_virtual_protect(uint32_t address)
 ;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::get_module_address(const char *module_name)
 {
-    // TODO: Don't call GetProcessId function. Store process id in constructor.
     // TODO: Store modules addresses in map.
     uint32_t result = 0;
     HANDLE snapshot_handle = WINAPI_CALL(CreateToolhelp32Snapshot(
-        TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(_handle)));
+        TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, _process_id));
     if (snapshot_handle != INVALID_HANDLE_VALUE)
     {
         MODULEENTRY32 module_entry;

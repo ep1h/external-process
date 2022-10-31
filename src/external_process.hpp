@@ -32,7 +32,6 @@ enum enVirtualProtect
 class ExternalProcess
 {
 public:
-    ExternalProcess(void *process_handle);
     ExternalProcess(uint32_t process_id);
     ExternalProcess(const char *process_name);
     ~ExternalProcess(void);
@@ -98,6 +97,7 @@ private:
                                         uint32_t overwrite_bytes_size);
 
     void *_handle;
+    uint32_t _process_id;
     std::unordered_map<uint32_t, uint32_t> _allocated_memory;
     std::unordered_map<uint32_t, VirtualProtect> _virtual_protect;
     std::unordered_map<uint32_t, ExternalCaller> _callers;

@@ -167,7 +167,7 @@ ExternalProcess::~ExternalProcess(void)
     {
         restore_virtual_protect(i.first);
     }
-    CloseHandle((HANDLE)_handle);
+    WINAPI_CALL(CloseHandle((HANDLE)_handle));
 }
 
 /**-----------------------------------------------------------------------------
@@ -352,8 +352,8 @@ uint32_t ExternalProcess::get_module_address(const char *module_name)
     // TODO: Don't call GetProcessId function. Store process id in constructor.
     // TODO: Store modules addresses in map.
     uint32_t result = 0;
-    HANDLE snapshot_handle = CreateToolhelp32Snapshot(
-        TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(_handle));
+    HANDLE snapshot_handle = WINAPI_CALL(CreateToolhelp32Snapshot(
+        TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, GetProcessId(_handle)));
     if (snapshot_handle != INVALID_HANDLE_VALUE)
     {
         MODULEENTRY32 module_entry;
@@ -371,7 +371,7 @@ uint32_t ExternalProcess::get_module_address(const char *module_name)
             } while (Module32Next(snapshot_handle, &module_entry));
         }
     }
-    CloseHandle(snapshot_handle);
+    WINAPI_CALL(CloseHandle(snapshot_handle));
     return result;
 }
 
@@ -658,7 +658,8 @@ uint32_t ExternalProcess::get_process_id_by_process_name(
     const char *process_name) const
 {
     uint32_t result = 0;
-    HANDLE snapshot_handle = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+    HANDLE snapshot_handle =
+        WINAPI_CALL(CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0));
     if (snapshot_handle != INVALID_HANDLE_VALUE)
     {
         PROCESSENTRY32 process_entry;
@@ -675,7 +676,7 @@ uint32_t ExternalProcess::get_process_id_by_process_name(
             } while (Process32Next(snapshot_handle, &process_entry));
         }
     }
-    CloseHandle(snapshot_handle);
+    WINAPI_CALL(CloseHandle(snapshot_handle));
     return result;
 }
 
@@ -965,10 +966,10 @@ uint32_t ExternalProcess::call_external_function(
     const ExternalProcess::ExternalCaller &ec) const
 {
     /* Create a thread in the remote process */
-    HANDLE thread_handle = CreateRemoteThread(
+    HANDLE thread_handle = WINAPI_CALL(CreateRemoteThread(
         static_cast<HANDLE>(_handle), NULL, 0,
         reinterpret_cast<LPTHREAD_START_ROUTINE>(ec.caller_address), NULL, 0,
-        NULL);
+        NULL));
 
     /* Wait for a return from the function */
     while (WaitForSingleObject(thread_handle, 0) != 0)
@@ -977,9 +978,9 @@ uint32_t ExternalProcess::call_external_function(
 
     DWORD result = 0;
     /* Get the returned value */
-    GetExitCodeThread(thread_handle, &result);
+    WINAPI_CALL(GetExitCodeThread(thread_handle, &result));
 
-    CloseHandle(thread_handle);
+    WINAPI_CALL(CloseHandle(thread_handle));
     return result;
 }
 

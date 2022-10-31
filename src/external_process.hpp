@@ -18,6 +18,17 @@ enum class enInjectionType
     EIT_PUSHRET,
 };
 
+enum enVirtualProtect
+{
+    NOACCESS = 0b0001,
+    READ = 0b0010,
+    WRITE = 0b0100,
+    EXECUTE = 0b1000,
+    READ_EXECUTE = READ | EXECUTE,
+    READ_WRITE = READ | WRITE,
+    READ_WRITE_EXECUTE = READ | WRITE | EXECUTE
+};
+
 class ExternalProcess
 {
 public:
@@ -29,6 +40,9 @@ public:
     void write_buf(uint32_t address, uint32_t size, const void *data) const;
     uint32_t alloc(const uint32_t size);
     void free(uint32_t address);
+    void set_virtual_protect(uint32_t address, uint32_t size,
+                             enVirtualProtect type);
+    void restore_virtual_protect(uint32_t address);
     uint32_t get_module_address(const char *module_name);
     uint32_t call_cdecl_function(uint32_t address, uint32_t argc, ...);
     uint32_t call_stdcall_function(uint32_t address, uint32_t argc, ...);
@@ -49,6 +63,11 @@ private:
         ECC_CDECL = 1,
         ECC_STDCALL,
         ECC_THISCALL
+    };
+    struct VirtualProtect
+    {
+        uint32_t size;
+        uint32_t original_protect;
     };
     struct ExternalCaller
     {
@@ -80,6 +99,7 @@ private:
 
     void *_handle;
     std::unordered_map<uint32_t, uint32_t> _allocated_memory;
+    std::unordered_map<uint32_t, VirtualProtect> _virtual_protect;
     std::unordered_map<uint32_t, ExternalCaller> _callers;
     std::unordered_map<uint32_t, InjectedCodeInfo> _injected_code;
 };

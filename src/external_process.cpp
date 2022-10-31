@@ -115,6 +115,10 @@ ExternalProcess::~ExternalProcess(void)
         ++n;
         free(i->first);
     }
+    for (auto &i : _virtual_protect)
+    {
+        restore_virtual_protect(i.first);
+    }
     CloseHandle((HANDLE)_handle);
 }
 
@@ -201,6 +205,84 @@ void ExternalProcess::free(uint32_t address)
         NtFreeVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
                             MEM_RELEASE);
         _allocated_memory.erase(address);
+        _virtual_protect.erase(address);
+    }
+}
+
+/**-----------------------------------------------------------------------------
+; @set_virtual_protect
+;
+; @brief
+;   Changes the protection on a region of committed pages in the virtual address
+;   space of the calling process.
+;
+; @param address    Region address.
+; @param size       Region size.
+; @param type       Protection type.
+;-----------------------------------------------------------------------------*/
+void ExternalProcess::set_virtual_protect(uint32_t address, uint32_t size,
+                                          enVirtualProtect type)
+{
+    ULONG old_protect = 0;
+    PVOID addr = reinterpret_cast<PVOID>(address);
+    ULONG sz = size;
+    ULONG protect = 0;
+    if (type == (enVirtualProtect::READ | enVirtualProtect::WRITE |
+                 enVirtualProtect::EXECUTE))
+    {
+        protect = PAGE_READWRITE;
+    }
+    else if (type == (enVirtualProtect::READ & enVirtualProtect::WRITE))
+    {
+        protect = PAGE_READWRITE; // TODO: Not PAGE_READWRITE
+    }
+    else if (type == (enVirtualProtect::READ & enVirtualProtect::EXECUTE))
+    {
+        protect = PAGE_EXECUTE_READ;
+    }
+    else if (type == enVirtualProtect::READ)
+    {
+        protect = PAGE_READONLY;
+    }
+    else if (type == enVirtualProtect::NOACCESS)
+    {
+        protect = PAGE_NOACCESS;
+    }
+
+    NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz, protect,
+                           &old_protect);
+
+    auto original_vp = _virtual_protect.find(address);
+    if (original_vp == _virtual_protect.end())
+    {
+        _virtual_protect[address] = {size, old_protect};
+    }
+    else if (original_vp->second.size < size)
+    {
+        original_vp->second.size = size;
+    }
+}
+
+/**-----------------------------------------------------------------------------
+; @restore_virtual_protect
+;
+; @brief
+;   Restores the original protection on a region of committed pages in the
+;   virtual address space of the calling process.
+;
+; @param address    Region address.
+;-----------------------------------------------------------------------------*/
+void ExternalProcess::restore_virtual_protect(uint32_t address)
+{
+    auto vp = _virtual_protect.find(address);
+    if (vp != _virtual_protect.end())
+    {
+        ULONG old_protect;
+        PVOID addr = reinterpret_cast<PVOID>(address);
+        ULONG sz;
+        NtProtectVirtualMemory(static_cast<HANDLE>(_handle), &addr, &sz,
+                               vp->second.original_protect, &old_protect);
+        _virtual_protect.erase(address);
     }
 }
 

@@ -104,6 +104,45 @@ TEST_BEGIN(alloc_free)
 }
 TEST_END
 
+TEST_BEGIN(virtual_protect)
+{
+    run_external_process_simulator();
+    uint32_t buf_addr = get_sim_info()->buffer_address;
+    uint32_t buf_size = get_sim_info()->buffer_size;
+    ExternalProcess ep(test_application);
+
+    /* Create a local buffer */
+    uint8_t *buf = new uint8_t[buf_size];
+    memset(buf, 0xF9, buf_size);
+
+    /* Set read-only virtual protect */
+    ep.set_virtual_protect(buf_addr, buf_size,
+                           P1ExternalProcess::enVirtualProtect::READ);
+
+    /* Try to write created bufer in remote process */
+    ep.write_buf(buf_addr, buf_size, buf);
+
+    /* Test that remote process' buffer does not change */
+    for (uint32_t i = 0; i < buf_size; i++)
+    {
+        EXPECT_ZERO((ep.read<uint8_t>(buf_addr + i) == buf[i]));
+    }
+
+    /* Restore virtual protect */
+    ep.restore_virtual_protect(buf_addr);
+
+    /* Try to write again */
+    ep.write_buf(buf_addr, buf_size, buf);
+
+    /* Test that remote process' buffer changes */
+    for (uint32_t i = 0; i < buf_size; i++)
+    {
+        EXPECT(ep.read<uint8_t>(buf_addr + i), buf[i]);
+    }
+    delete[] buf;
+}
+TEST_END
+
 TEST_BEGIN(cdecl_caller)
 {
     uint32_t cdecl_sum_func_addr = get_sim_info()->sum_cdecl_function_address;
@@ -282,6 +321,6 @@ TEST_END
 
 RUN_TESTS(get_process_id_by_non_existent_process_name,
           get_process_id_by_existent_process_name, read_buf, write_buf,
-          alloc_free, cdecl_caller, stdcall_caller, thiscall_caller,
+          alloc_free, virtual_protect, cdecl_caller, stdcall_caller, thiscall_caller,
           jmp_injector, push_ret_injector, uninject, signature_scanner,
           get_module_name);

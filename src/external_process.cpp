@@ -570,6 +570,31 @@ void ExternalProcess::uninject_code(uint32_t address)
 }
 
 /**-----------------------------------------------------------------------------
+; @patch
+;
+; @brief
+;   Patches the external process memory with @size bytes of @bytes code at
+;   @address address.
+;
+; @param address   An address where the code should be patched.
+; @param bytes     Code bytes to be patched at @address address.
+; @param size      Number of the bytes to be patched.
+;-----------------------------------------------------------------------------*/
+void ExternalProcess::patch(uint32_t address, const uint8_t *bytes,
+                            uint32_t size)
+{
+    // TODO: Store patched bytes to be able to unpatch later.
+    /* Set vp */
+    set_virtual_protect(address, size, enVirtualProtect::READ_WRITE_EXECUTE);
+
+    /* Write bytes */
+    write_buf(address, size, bytes);
+
+    /* Restore vp */
+    restore_virtual_protect(address);
+}
+
+/**-----------------------------------------------------------------------------
 ; @find_signature
 ;
 ; @brief

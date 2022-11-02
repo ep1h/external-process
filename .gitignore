@@ -26,3 +26,10 @@
 /examples/flatout_2_trainer/*
 !/examples/flatout_2_trainer/src
 !/examples/flatout_2_trainer/Makefile
+#GTA San Andreas 1.0 US
+!/examples
+/examples/*
+!/examples/gta_sa_trainer
+/examples/gta_sa_trainer/*
+!/examples/gta_sa_trainer/src
+!/examples/gta_sa_trainer/Makefile

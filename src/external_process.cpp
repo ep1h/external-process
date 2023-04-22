@@ -1,12 +1,9 @@
-/**-----------------------------------------------------------------------------
-; @file external_process.cpp
-;
-; @brief
-;   The file contains class members and methods specification of ExternalProcess
-;   class.
-;
-; @author ep1h
-;-----------------------------------------------------------------------------*/
+/**
+ * @file external_process.cpp
+ *
+ * @brief ExternalProcess class implementation.
+ *
+ */
 #include "external_process.hpp"
 #include <windows.h>
 #include <tlhelp32.h>
@@ -103,40 +100,17 @@ static std::string get_winapi_error_text(BOOL error_id)
 }
 #endif /* SHOW_ERRORS */
 
-/**-----------------------------------------------------------------------------
-; @ExternalProcess
-;
-; @brief
-;   Constructor. This constructor takes a process id @process_id, gets the
-;   process handle using OpenProcess method and assigns it to @_handle field.
-;-----------------------------------------------------------------------------*/
 ExternalProcess::ExternalProcess(uint32_t process_id) : _process_id(process_id)
 {
     _handle = WINAPI_CALL(OpenProcess(PROCESS_ALL_ACCESS, FALSE, process_id));
 }
 
-/**-----------------------------------------------------------------------------
-; @ExternalProcess
-;
-; @brief
-;   Constructor. This constructor takes a process name @process_name, gets the
-;   process id using @get_process_id_by_process_name method and delegates object
-;   creation to the constructor that takes a process id.
-;-----------------------------------------------------------------------------*/
 ExternalProcess::ExternalProcess(const char *process_name)
     : ExternalProcess(get_process_id_by_process_name(process_name))
 {
 }
 
-/**-----------------------------------------------------------------------------
-; @~ExternalProcess
-;
-; @brief
-;   Destructor. Removes all created external callers and injected code from
-;   remote process memory. Frees all memory allocated in remote process. Closes
-;   process handle.
-;-----------------------------------------------------------------------------*/
-ExternalProcess::~ExternalProcess(void)
+ExternalProcess::~ExternalProcess()
 {
     for (auto &i : _callers)
     {
@@ -159,13 +133,6 @@ ExternalProcess::~ExternalProcess(void)
     WINAPI_CALL(CloseHandle((HANDLE)_handle));
 }
 
-/**-----------------------------------------------------------------------------
-; @read_buf
-;
-; @brief
-;   Reads @size bytes at @address address of the external process.
-;   Writes the result to @out_result.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::read_buf(uint32_t address, uint32_t size,
                                void *out_result) const
 {
@@ -176,13 +143,6 @@ void ExternalProcess::read_buf(uint32_t address, uint32_t size,
                         reinterpret_cast<PVOID>(address), out_result, size, 0);
 }
 
-/**-----------------------------------------------------------------------------
-; @write_buf
-;
-; @brief
-;   Writes @size bytes from @data buffer to the external process at @address
-;   address.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::write_buf(uint32_t address, uint32_t size,
                                 const void *data) const
 {
@@ -194,18 +154,6 @@ void ExternalProcess::write_buf(uint32_t address, uint32_t size,
                          const_cast<PVOID>(data), size, 0);
 }
 
-/**-----------------------------------------------------------------------------
-; @alloc
-;
-; @brief
-;   Allocates @size bytes in the external process. If allocation is successful,
-;   adds an entry to the @_allocated_memory map, where the key is the address
-;   where the memory was allocated, the value is the number of allocated bytes.
-;
-; @return
-;   Address of the allocated memory if success.
-;   NULL if fail.
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::alloc(const uint32_t size)
 {
     // TODO: Add rights as function argument.
@@ -223,13 +171,6 @@ uint32_t ExternalProcess::alloc(const uint32_t size)
     return reinterpret_cast<uint32_t>(address);
 }
 
-/**-----------------------------------------------------------------------------
-; @free
-;
-; @brief
-;   Frees allocated region located at @address address in the external process.
-;   Removes an entry from the @_allocated_memory map, where the key is @address.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::free(uint32_t address)
 {
     auto result = _allocated_memory.find(address);
@@ -246,17 +187,6 @@ void ExternalProcess::free(uint32_t address)
     }
 }
 
-/**-----------------------------------------------------------------------------
-; @set_virtual_protect
-;
-; @brief
-;   Changes the protection on a region of committed pages in the virtual address
-;   space of the calling process.
-;
-; @param address    Region address.
-; @param size       Region size.
-; @param type       Protection type.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::set_virtual_protect(uint32_t address, uint32_t size,
                                           enVirtualProtect type)
 {
@@ -300,15 +230,6 @@ void ExternalProcess::set_virtual_protect(uint32_t address, uint32_t size,
     }
 }
 
-/**-----------------------------------------------------------------------------
-; @restore_virtual_protect
-;
-; @brief
-;   Restores the original protection on a region of committed pages in the
-;   virtual address space of the calling process.
-;
-; @param address    Region address.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::restore_virtual_protect(uint32_t address)
 {
     auto vp = _virtual_protect.find(address);
@@ -323,19 +244,6 @@ void ExternalProcess::restore_virtual_protect(uint32_t address)
     }
 }
 
-/**-----------------------------------------------------------------------------
-; @get_module_address
-;
-; @brief
-;   Return address of module named @module_name (if exists).
-;   Otherwise returns zero.
-;
-; @param module_name    Module name.
-;
-; @return
-;   Module address if success.
-;   0 if failire.
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::get_module_address(const char *module_name)
 {
     // TODO: Store modules addresses in map.
@@ -363,25 +271,6 @@ uint32_t ExternalProcess::get_module_address(const char *module_name)
     return result;
 }
 
-/**-----------------------------------------------------------------------------
-; @call_cdecl_function
-;
-; @brief
-;   Allocates a buffer with execution rights in the remote process. Writes to
-;   this buffer a set of x86 instructions that call a function at @address with
-;   @args arguments using 'cdecl' call convention. Creates a thread that
-;   executes the code in this buffer. Waits for this thread to finish executing.
-;   Returns a value returned by the function at the @address address (or value
-;   of EAX register for void functions).
-;
-; @param address    An address of the function to be called.
-; @param argc       A number of arguments that the function takes.
-; @param args       Function arguments (if any).
-;
-; @return
-;   A value returned by the called function (or a value of EAX register for
-;   functions of 'void' type).
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
                                               ...)
 {
@@ -401,25 +290,6 @@ uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
     return call_external_function(_callers[address]);
 }
 
-/**-----------------------------------------------------------------------------
-; @call_stdcall_function
-;
-; @brief
-;   Allocates a buffer with execution rights in the remote process. Writes to
-;   this buffer a set of x86 instructions that call a function at @address with
-;   @args arguments using 'stdcall' call convention. Creates a thread that
-;   executes the code in this buffer. Waits for this thread to finish executing.
-;   Returns a value returned by the function at the @address address (or value
-;   of EAX register for void functions).
-;
-; @param address    An address of the function to be called.
-; @param argc       A number of arguments that the function takes.
-; @param args       Function arguments (if any).
-;
-; @return
-;   A value returned by the called function (or a value of EAX register for
-;   functions of 'void' type).
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
                                                 ...)
 {
@@ -439,27 +309,6 @@ uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
     return call_external_function(_callers[address]);
 }
 
-/**-----------------------------------------------------------------------------
-; @call_thiscall_function
-;
-; @brief
-;   Allocates a buffer with execution rights in the remote process. Writes to
-;   this buffer a set of x86 instructions that call a function at @address with
-;   @args arguments using 'thiscall' call convention. Creates a thread that
-;   executes the code in this buffer. Waits for this thread to finish executing.
-;   Returns a value returned by the function at the @address address (or value
-;   of EAX register for void functions).
-;
-; @param address    An address of the function to be called.
-; @param this_ptr   A pointer to an object for which the @ec caller will call
-;                   method at @ec.function_address address.
-; @param argc       A number of arguments that the function takes.
-; @param args       Function arguments (if any).
-;
-; @return
-;   A value returned by the called function (or a value of EAX register for
-;   functions of 'void' type).
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::call_thiscall_function(uint32_t address,
                                                  uint32_t this_ptr,
                                                  uint32_t argc, ...)
@@ -480,20 +329,6 @@ uint32_t ExternalProcess::call_thiscall_function(uint32_t address,
     return call_external_function(_callers[address]);
 }
 
-/**-----------------------------------------------------------------------------
-; @inject_code
-;
-; @brief
-;   Injects @bytes_size bytes of code into the external process at @address
-;   address.
-;
-; @param address                An address where code should be injected.
-; @param bytes                  Code bytes to be injected at @address address.
-; @param bytes_size             Number of the bytes to be injected.
-; @param overwrite_bytes_size   Number of original bytes to be overwritten and
-;                               executed after injected code.
-; @param it                     Type of transition to the injected code.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::inject_code(uint32_t address, const uint8_t *bytes,
                                   uint32_t bytes_size,
                                   uint32_t overwrite_bytes_size,
@@ -529,15 +364,6 @@ void ExternalProcess::inject_code(uint32_t address, const uint8_t *bytes,
     }
 }
 
-/**-----------------------------------------------------------------------------
-; @uninject_code
-;
-; @brief
-;   Removes code injected at @address address (if any), Restores the original
-;   bytes overwritten by the injector.
-;
-; @param address    An address where the code was injected.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::uninject_code(uint32_t address)
 {
     auto ici = _injected_code.find(address);
@@ -569,17 +395,6 @@ void ExternalProcess::uninject_code(uint32_t address)
     }
 }
 
-/**-----------------------------------------------------------------------------
-; @patch
-;
-; @brief
-;   Patches the external process memory with @size bytes of @bytes code at
-;   @address address.
-;
-; @param address   An address where the code should be patched.
-; @param bytes     Code bytes to be patched at @address address.
-; @param size      Number of the bytes to be patched.
-;-----------------------------------------------------------------------------*/
 void ExternalProcess::patch(uint32_t address, const uint8_t *bytes,
                             uint32_t size)
 {
@@ -594,24 +409,6 @@ void ExternalProcess::patch(uint32_t address, const uint8_t *bytes,
     restore_virtual_protect(address);
 }
 
-/**-----------------------------------------------------------------------------
-; @find_signature
-;
-; @brief
-;   Searches for a sequence of bytes in the memory area of the external process.
-;
-; @param address    The address from which to start the search.
-; @param size       The size of the memory area in which to search for the
-;                   signature.
-; @param signature  The byte sequence to be found.
-; @param mask       The mask to search by. The character 'x' is a complete
-;                   match. Characters other than 'x' ignore the corresponding
-;                   byte.
-;
-; @return
-;   The address of the first occurrence of @signature by mask @mask in memory
-;   area [@address ... @address + @size), or zero on unsuccessful search.
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::find_signature(uint32_t address, uint32_t size,
                                          const uint8_t *signature,
                                          const char *mask) const
@@ -654,19 +451,6 @@ uint32_t ExternalProcess::find_signature(uint32_t address, uint32_t size,
     return result;
 }
 
-/**-----------------------------------------------------------------------------
-; @get_process_id_by_process_name
-;
-; @brief
-;   Return process id of process named @process_name (if one is running).
-;   Otherwise returns zero.
-;
-; @param process_name   Process name.
-;
-; @return
-;   Process id if success.
-;   0 if failire.
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::get_process_id_by_process_name(
     const char *process_name) const
 {
@@ -693,7 +477,6 @@ uint32_t ExternalProcess::get_process_id_by_process_name(
     return result;
 }
 
-// TODO: Write description, test
 void ExternalProcess::provide_debug_access(void)
 {
     WINAPI_CALL(OpenProcessToken(static_cast<HANDLE>(_handle),
@@ -713,32 +496,6 @@ void ExternalProcess::provide_debug_access(void)
                                       (PTOKEN_PRIVILEGES)NULL, (PDWORD)NULL));
 }
 
-/**-----------------------------------------------------------------------------
-; @build_cdecl_caller
-;
-; @brief
-;   Creates a buffer with execution rights in the external process. Writes to
-;   this buffer a set of i686 instructions that:
-;       - push arguments in the amount of @argc onto the stack
-;       - call function at @address using 'cdecl' call convention
-;       - restore stack
-;       - return
-;
-;   cdecl-function caller structure:
-;     BYTES         INSTRUCTION     SIZE    COMMENT
-;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the last arg. value
-;     ...
-;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the 2-nd arg. value
-;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the 1-st arg. value
-;     E8 XXXXXXXX   call XXXXXXXX   5       XXXXXXXX = function address
-;     83 C4 XX      add esp, XX     3       Restore stack. XX = 4 * @argc
-;     C3            ret             1       Return (terminate thread)
-;
-; @param address    An address of a function to be called.
-; @param argc       A number of arguments that the function takes.
-;
-; @return           Address where the caller is placed in the external process.
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::build_cdecl_caller(uint32_t address, uint32_t argc)
 {
     /* Calculate caller size */
@@ -785,30 +542,6 @@ uint32_t ExternalProcess::build_cdecl_caller(uint32_t address, uint32_t argc)
     return caller_address;
 }
 
-/**-----------------------------------------------------------------------------
-; @build_stdcall_caller
-;
-; @brief
-;   Creates a buffer with execution rights in the external process. Writes to
-;   this buffer a set of i686 instructions that:
-;       - push arguments in the amount of @argc onto the stack
-;       - call function at @address using 'stdcall' call convention
-;       - return
-;
-;   stdcall-function caller structure:
-;     BYTES         INSTRUCTION     SIZE    COMMENT
-;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the last arg. value
-;     ...
-;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the 2-nd arg. value
-;     68 XXXXXXXX   push XXXXXXXX   5       XXXXXXXX = the 1-st arg. value
-;     E8 XXXXXXXX   call XXXXXXXX   5       XXXXXXXX = function address
-;     C3            ret             1       Return (terminate the thread)
-;
-; @param address    An address of the function to be called.
-; @param argc       A number of arguments that the function takes.
-;
-; @return           Address where the caller is placed in the external process.
-;-----------------------------------------------------------------------------*/
 uint32_t ExternalProcess::build_stdcall_caller(uint32_t address, uint32_t argc)
 {
     /* Calculate caller size */
@@ -849,32 +582,6 @@ uint32_t ExternalProcess::build_stdcall_caller(uint32_t address, uint32_t argc)
     return caller_address;
 }
 
-/**-----------------------------------------------------------------------------
-; @build_thiscall_caller
-;
-; @brief
-;   Creates a buffer with execution rights in the external process. Writes to
-;   this buffer a set of i686 instructions that:
-;       - push arguments in the amount of @argc onto the stack
-;       - put 'this' for which a method at @address is called into EAX register
-;       - call class method at @address using 'stdcall' call convention
-;       - return
-;
-;   thiscall-function caller structure:
-;     BYTES         INSTRUCTION         SIZE    COMMENT
-;     68 XXXXXXXX   push XXXXXXXX       5       XXXXXXXX = the last arg. value
-;     ...
-;     68 XXXXXXXX   push XXXXXXXX       5       XXXXXXXX = the 2-nd arg. value
-;     68 XXXXXXXX   push XXXXXXXX       5       XXXXXXXX = the 1-st arg. value
-;     B9 XXXXXXXX   mov ecx, XXXXXXXX   5       XXXXXXXX = 'this'
-;     E8 XXXXXXXX   call XXXXXXXX       5       XXXXXXXX = function address
-;     C3            ret                 1       Return (terminate the thread)
-;
-; @param address    An address of the function to be called.
-; @param argc       A number of arguments that the function takes.
-;
-; @return           Address where the caller is placed in the external process.
------------------------------------------------------------------------------**/
 uint32_t ExternalProcess::build_thiscall_caller(uint32_t address, uint32_t argc)
 {
     /* Calculate caller size */
@@ -920,18 +627,6 @@ uint32_t ExternalProcess::build_thiscall_caller(uint32_t address, uint32_t argc)
     return caller_address;
 }
 
-/**-----------------------------------------------------------------------------
-; @send_external_caller_arguments
-;
-; @brief
-;   Writes arguments @args with which the function should be called.
-;   Since instructions for pushing arguments on stack for all implemented
-;   callers (cdecl, thiscall, stdcall) are at the very beginning, this function
-;   is universal and applicable to callers of all call conventions listed above.
-;
-; @param ec     A caller to specify arguments for.
-; @param args   Arguments.
------------------------------------------------------------------------------**/
 void ExternalProcess::send_external_caller_arguments(ExternalCaller const &ec,
                                                      uint32_t args, ...)
 {
@@ -959,18 +654,6 @@ void ExternalProcess::send_external_caller_arguments(ExternalCaller const &ec,
     delete[] push_args_block;
 }
 
-/**-----------------------------------------------------------------------------
-; @send_thiscall_this_ptr
-;
-; @brief
-;   Puts @this_ptr in caller @ec. The ffset is calculated as follows:
-;       @ec.argc * 5 is a push args instructions size. +1 is a mov ecx
-;       instruction size. It must be followed by @this_ptr.
-;
-; @param ec         A caller to specify class object ptr for.
-; @param this_ptr   A pointer to an object for which the @ec caller will call
-;                   method at @ec.function_address address.
------------------------------------------------------------------------------**/
 void ExternalProcess::send_thiscall_this_ptr(const ExternalCaller &ec,
                                              uint32_t this_ptr)
 {
@@ -981,20 +664,6 @@ void ExternalProcess::send_thiscall_this_ptr(const ExternalCaller &ec,
     return;
 }
 
-/**-----------------------------------------------------------------------------
-; @call_external_function
-;
-; @brief
-;   Creates a thread in remote process. This thread executes the code located in
-;   @ec.caller_address buffer. Waits for this thread to finish executing.
-;   Returns a value returned by the function at the @ec.function+address address
-;   (or a value of EAX register for void functions).
-;
-; @param eс Caller whose function is to be called.
-;
-; @return   A value returned by the called function (or a value of EAX register
-;           for functions of type 'void').
------------------------------------------------------------------------------**/
 uint32_t ExternalProcess::call_external_function(
     const ExternalProcess::ExternalCaller &ec) const
 {
@@ -1017,58 +686,6 @@ uint32_t ExternalProcess::call_external_function(
     return result;
 }
 
-/**-----------------------------------------------------------------------------
-; @inject_code_using_jmp
-;
-; @brief
-;   Injects @bytes_size bytes of code from the @bytes argument into remote
-;   process at @address address.
-;
-;   Logic:
-;   Allocates a @allocated_buf buffer in a remote process with execute
-;   permissions.
-;   Writes @bytes injected code to it. Writes an unconditional jump instruction
-;   'jmp'to @allocated_buf at @address. This jmp instruction overwrites 5 bytes
-;   at @address. These 5 bytes are recovered in the @allocated_buf buffer after
-;   the injected code.
-;   There are cases where the fifth byte (@address+4) is not the last byte of
-;   the instruction. In this case, the number of overwritten bytes must be
-;   specified explicitly (argument @overwrite_bytes_size) and all of them will
-;   be executed in the @allocated_buf buffer after the injected code.
-;   If @overwrite_bytes_size is greater than 5, then to save addressing, the
-;   first (@overwrite_bytes_size - 5) bytes at @address will be replaced with
-;   nops (0x90).
-;   In the example below, there is a situation when it is impossible to write a
-;   jmp instruction at @address without explicitly specifying
-;   @overwrite_bytes_size.
-;
-;   Original bytes:
-;     ADDRESS                           INSTRUCTION(S)      INSTRUCTION(S) LEN
-;     @address + 00                     instruction #1      4
-;     @address + 04                     instruction #2      2
-;     @address + 06                     instruction #3      4
-;
-;   After injection with @overwrite_bytes_size = 6:
-;     ADDRESS                           INSTRUCTION(S)      INSTRUCTION(S) LEN
-;     @address + 00                     nop                 1
-;     @address + 01                     jmp @allocated_buf  5
-;     @address + 06                     instruction #3      4
-;
-;   Allocated buffer:
-;     ADDRESS                           INSTRUCTION(S)      INSTRUCTION(S) LEN
-;     @allocated_buf + 00               injected code       @size
-;     @allocated_buf + @size            instruction #1      4
-;     @allocated_buf + @size + 4        instruction #2      2
-;     @allocated_buf + @size + 4 + 2    jmp @address + 06   5
-;
-; @param address                An address where code should be injected.
-; @param bytes                  Code bytes to be injected at 'address' address.
-; @param bytes_size             Number of the bytes to be injected.
-; @param overwrite_bytes_size   The number of original bytes to be overwritten
-;                               and executed after injected code.
-;
-; @return allocated buffer address @allocated_buf
------------------------------------------------------------------------------**/
 uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
                                                 const uint8_t *bytes,
                                                 uint32_t size,
@@ -1138,21 +755,6 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
     return allocated_buf;
 }
 
-/**-----------------------------------------------------------------------------
-; @inject_code_using_push_ret
-;
-; @brief
-;   Injects @bytes_size bytes of code from the @bytes argument into remote
-;   process at @address address.
-;
-; @param address                An address where code should be injected.
-; @param bytes                  Code bytes to be injected at 'address' address.
-; @param bytes_size             Number of the bytes to be injected.
-; @param overwrite_bytes_size   The number of original bytes to be overwritten
-;                               and executed after injected code.
-;
-; @return allocated buffer address @allocated_buf
------------------------------------------------------------------------------**/
 uint32_t ExternalProcess::inject_code_using_push_ret(
     uint32_t address, const uint8_t *bytes, uint32_t bytes_size,
     uint32_t overwrite_bytes_size)

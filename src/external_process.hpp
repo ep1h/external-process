@@ -67,7 +67,7 @@ public:
      * @param size       Number of bytes to read.
      * @param out_result Buffer to write the result to.
      */
-    void read_buf(uint32_t address, uint32_t size, void *out_result) const;
+    void read_buf(uintptr_t address, size_t size, void *out_result) const;
 
     /**
      * @brief Writes @size bytes from @data buffer to the external process at
@@ -77,7 +77,7 @@ public:
      * @param size       Number of bytes to write.
      * @param data       Buffer to read data from.
      */
-    void write_buf(uint32_t address, uint32_t size, const void *data) const;
+    void write_buf(uintptr_t address, size_t size, const void *data) const;
 
     /**
      * @brief Allocates @size bytes in the external process.
@@ -92,7 +92,7 @@ public:
      *   Address of the allocated memory if success.
      *   NULL if fail.
      */
-    uint32_t alloc(const uint32_t size);
+    uintptr_t alloc(const size_t size);
 
     /**
      * @brief Frees allocated region located at @address address in the external
@@ -103,7 +103,7 @@ public:
      *
      * @param address    Address of the region to free.
      */
-    void free(uint32_t address);
+    void free(uintptr_t address);
 
     /**
      * @brief Changes the protection on a region of committed pages in the
@@ -113,7 +113,7 @@ public:
      * @param size       Region size.
      * @param type       Protection type.
      */
-    void set_virtual_protect(uint32_t address, uint32_t size,
+    void set_virtual_protect(uintptr_t address, size_t size,
                              enVirtualProtect type);
 
     /**
@@ -122,7 +122,7 @@ public:
      *
      * @param address    Region address.
      */
-    void restore_virtual_protect(uint32_t address);
+    void restore_virtual_protect(uintptr_t address);
 
     /**
      * @brief Return an address of the module named @module_name (if exists).
@@ -133,7 +133,7 @@ public:
      *   Non-zero module address if success.
      *   0 if failire.
      */
-    uint32_t get_module_address(const char *module_name);
+    uintptr_t get_module_address(const char *module_name);
 
     /**
      * @brief Calls a function at @address address with @args arguments using
@@ -155,7 +155,7 @@ public:
      *   A value returned by the called function (or a value of EAX register for
      *   functions of 'void' type).
      */
-    uint32_t call_cdecl_function(uint32_t address, uint32_t argc, ...);
+    uintptr_t call_cdecl_function(uintptr_t address, size_t argc, ...);
 
     /**
      * @brief Calls a function at @address address with @args arguments using
@@ -177,7 +177,7 @@ public:
      *   A value returned by the called function (or a value of EAX register
      * for functions of 'void' type).
      */
-    uint32_t call_stdcall_function(uint32_t address, uint32_t argc, ...);
+    uintptr_t call_stdcall_function(uintptr_t address, size_t argc, ...);
 
     /**
      * @brief Calls a function at @address address with @args arguments using
@@ -200,8 +200,8 @@ public:
      * @return A value returned by the called function (or a value of EAX
      *         register for functions of 'void' type).
      */
-    uint32_t call_thiscall_function(uint32_t address, uint32_t this_ptr,
-                                    uint32_t argc, ...);
+    uintptr_t call_thiscall_function(uintptr_t address, uintptr_t this_ptr,
+                                     size_t argc, ...);
 
     /**
      * @brief Injects @bytes_size bytes of code into the external process at
@@ -215,9 +215,8 @@ public:
      *                              and executed after injected code.
      * @param it                    Type of transition to the injected code.
      */
-    void inject_code(uint32_t address, const uint8_t *bytes,
-                     uint32_t bytes_size, uint32_t overwrite_bytes_size,
-                     enInjectionType it);
+    void inject_code(uintptr_t address, const uint8_t *bytes, size_t bytes_size,
+                     size_t overwrite_bytes_size, enInjectionType it);
 
     /**
      * @brief Removes code injected at @address address (if any), restores the
@@ -225,7 +224,7 @@ public:
      *
      * @param address   An address where the code was injected.
      */
-    void uninject_code(uint32_t address);
+    void uninject_code(uintptr_t address);
 
     /**
      * @brief Patches the external process memory with @size bytes of @bytes
@@ -235,7 +234,7 @@ public:
      * @param bytes     Code bytes to be patched at @address address.
      * @param size      Number of the bytes to be patched.
      */
-    void patch(uint32_t address, const uint8_t *bytes, uint32_t size);
+    void patch(uintptr_t address, const uint8_t *bytes, size_t size);
 
     /**
      * @brief Searches for a sequence of bytes in the external process.memory.
@@ -252,8 +251,8 @@ public:
      * in memory area [@address ... @address + @size), or zero on unsuccessful
      * search.
      */
-    uint32_t find_signature(uint32_t address, uint32_t size,
-                            const uint8_t *signature, const char *mask) const;
+    uintptr_t find_signature(uintptr_t address, size_t size,
+                             const uint8_t *signature, const char *mask) const;
 
     /** @brief Reads a value of type T from the specified address in the
      *        external process' memory.
@@ -263,7 +262,7 @@ public:
      *
      * @return A value read from the specified address.
      */
-    template <typename T> T read(uint32_t address) const;
+    template <typename T> T read(uintptr_t address) const;
 
     /** @brief Writes a value of type T to the specified address in the
      *        external process' memory.
@@ -272,7 +271,7 @@ public:
      * @param address   An address to write the value to.
      * @param data      A value to be written.
      */
-    template <typename T> void write(uint32_t address, const T &data) const;
+    template <typename T> void write(uintptr_t address, const T &data) const;
 
 private:
     enum class enCallConvention
@@ -283,21 +282,21 @@ private:
     };
     struct VirtualProtect
     {
-        uint32_t size;
+        size_t size;
         uint32_t original_protect;
     };
     struct ExternalCaller
     {
-        uint32_t function_address;
-        uint32_t caller_address;
-        uint32_t argc;
+        uintptr_t function_address;
+        uintptr_t caller_address;
+        size_t argc;
         enCallConvention cc;
     };
     struct InjectedCodeInfo
     {
-        uint32_t injected_bytes_number;
-        uint32_t overwritten_bytes_number;
-        uint32_t allocated_buffer;
+        size_t injected_bytes_number;
+        size_t overwritten_bytes_number;
+        uintptr_t allocated_buffer;
     };
 
     /**
@@ -345,7 +344,7 @@ private:
      *
      * @return Address where the caller is placed in the external process.
      */
-    uint32_t build_cdecl_caller(uint32_t address, uint32_t argc);
+    uintptr_t build_cdecl_caller(uintptr_t address, size_t argc);
 
     /**
      * @brief Allocates and initializes a buffer in a remote process for calling
@@ -371,7 +370,7 @@ private:
      *
      * @return Address where the caller is placed in the external process.
      */
-    uint32_t build_stdcall_caller(uint32_t address, uint32_t argc);
+    uintptr_t build_stdcall_caller(uintptr_t address, size_t argc);
 
     /**
      * @brief Allocates and initializes a buffer in a remote process for calling
@@ -399,7 +398,7 @@ private:
      *
      * @return Address where the caller is placed in the external process.
      */
-    uint32_t build_thiscall_caller(uint32_t address, uint32_t argc);
+    uintptr_t build_thiscall_caller(uintptr_t address, size_t argc);
 
     /**
      * @brief
@@ -412,8 +411,8 @@ private:
      * @param ec    A caller to specify arguments for.
      * @param args  Arguments.
      */
-    void send_external_caller_arguments(const ExternalCaller &ec, uint32_t args,
-                                        ...);
+    void send_external_caller_arguments(const ExternalCaller &ec,
+                                        uintptr_t args, ...);
 
     /**
      * @brief
@@ -425,7 +424,7 @@ private:
      * @param this_ptr  A pointer to an object for which the @ec caller will
      *                  call method at @ec.function_address address.
      */
-    void send_thiscall_this_ptr(const ExternalCaller &ec, uint32_t this_ptr);
+    void send_thiscall_this_ptr(const ExternalCaller &ec, uintptr_t this_ptr);
 
     /**
      * @brief Calls a function using information from a caller.
@@ -440,7 +439,7 @@ private:
      * @return  A value returned by the called function (or a value of EAX
      *          register for void functions.
      */
-    uint32_t call_external_function(const ExternalCaller &ec) const;
+    uintptr_t call_external_function(const ExternalCaller &ec) const;
 
     /**
      * @brief Injects @bytes_size bytes of code from the @bytes argument into
@@ -492,9 +491,9 @@ private:
      *
      * @return  allocated buffer address @allocated_buf
      */
-    uint32_t inject_code_using_jmp(uint32_t address, const uint8_t *bytes,
-                                   uint32_t bytes_size,
-                                   uint32_t overwrite_bytes_size);
+    uintptr_t inject_code_using_jmp(uintptr_t address, const uint8_t *bytes,
+                                    size_t bytes_size,
+                                    size_t overwrite_bytes_size);
 
     /**
      * @brief Injects @bytes_size bytes of code from the @bytes argument into
@@ -509,20 +508,21 @@ private:
      *
      * @return  allocated buffer address @allocated_buf
      */
-    uint32_t inject_code_using_push_ret(uint32_t address, const uint8_t *bytes,
-                                        uint32_t bytes_size,
-                                        uint32_t overwrite_bytes_size);
+    uintptr_t inject_code_using_push_ret(uintptr_t address,
+                                         const uint8_t *bytes,
+                                         size_t bytes_size,
+                                         size_t overwrite_bytes_size);
 
     void *_handle;
     void *_dbg_handle;
     uint32_t _process_id;
-    std::unordered_map<uint32_t, uint32_t> _allocated_memory;
-    std::unordered_map<uint32_t, VirtualProtect> _virtual_protect;
-    std::unordered_map<uint32_t, ExternalCaller> _callers;
-    std::unordered_map<uint32_t, InjectedCodeInfo> _injected_code;
+    std::unordered_map<uintptr_t, size_t> _allocated_memory;
+    std::unordered_map<uintptr_t, VirtualProtect> _virtual_protect;
+    std::unordered_map<uintptr_t, ExternalCaller> _callers;
+    std::unordered_map<uintptr_t, InjectedCodeInfo> _injected_code;
 };
 
-template <typename T> inline T ExternalProcess::read(uint32_t address) const
+template <typename T> inline T ExternalProcess::read(uintptr_t address) const
 {
     T result;
     read_buf(address, sizeof(T), &result);
@@ -530,7 +530,7 @@ template <typename T> inline T ExternalProcess::read(uint32_t address) const
 }
 
 template <typename T>
-inline void ExternalProcess::write(uint32_t address, const T &data) const
+inline void ExternalProcess::write(uintptr_t address, const T &data) const
 {
     write_buf(address, sizeof(data), &data);
 }

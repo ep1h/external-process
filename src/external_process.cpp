@@ -133,7 +133,7 @@ ExternalProcess::~ExternalProcess()
     WINAPI_CALL(CloseHandle((HANDLE)_handle));
 }
 
-void ExternalProcess::read_buf(uint32_t address, uint32_t size,
+void ExternalProcess::read_buf(uintptr_t address, size_t size,
                                void *out_result) const
 {
     // ReadProcessMemory(static_cast<HANDLE>(_handle),
@@ -143,7 +143,7 @@ void ExternalProcess::read_buf(uint32_t address, uint32_t size,
                         reinterpret_cast<PVOID>(address), out_result, size, 0);
 }
 
-void ExternalProcess::write_buf(uint32_t address, uint32_t size,
+void ExternalProcess::write_buf(uintptr_t address, size_t size,
                                 const void *data) const
 {
     // WriteProcessMemory(static_cast<HANDLE>(_handle),
@@ -154,7 +154,7 @@ void ExternalProcess::write_buf(uint32_t address, uint32_t size,
                          const_cast<PVOID>(data), size, 0);
 }
 
-uint32_t ExternalProcess::alloc(const uint32_t size)
+uintptr_t ExternalProcess::alloc(const size_t size)
 {
     // TODO: Add rights as function argument.
     // void *address =
@@ -166,12 +166,12 @@ uint32_t ExternalProcess::alloc(const uint32_t size)
                             MEM_COMMIT | MEM_RESERVE, PAGE_EXECUTE_READWRITE);
     if (address != NULL)
     {
-        _allocated_memory[reinterpret_cast<uint32_t>(address)] = size;
+        _allocated_memory[reinterpret_cast<uintptr_t>(address)] = size;
     }
-    return reinterpret_cast<uint32_t>(address);
+    return reinterpret_cast<uintptr_t>(address);
 }
 
-void ExternalProcess::free(uint32_t address)
+void ExternalProcess::free(uintptr_t address)
 {
     auto result = _allocated_memory.find(address);
     if (result != _allocated_memory.end())
@@ -187,7 +187,7 @@ void ExternalProcess::free(uint32_t address)
     }
 }
 
-void ExternalProcess::set_virtual_protect(uint32_t address, uint32_t size,
+void ExternalProcess::set_virtual_protect(uintptr_t address, size_t size,
                                           enVirtualProtect type)
 {
     ULONG old_protect = 0;
@@ -230,7 +230,7 @@ void ExternalProcess::set_virtual_protect(uint32_t address, uint32_t size,
     }
 }
 
-void ExternalProcess::restore_virtual_protect(uint32_t address)
+void ExternalProcess::restore_virtual_protect(uintptr_t address)
 {
     auto vp = _virtual_protect.find(address);
     if (vp != _virtual_protect.end())
@@ -244,10 +244,10 @@ void ExternalProcess::restore_virtual_protect(uint32_t address)
     }
 }
 
-uint32_t ExternalProcess::get_module_address(const char *module_name)
+uintptr_t ExternalProcess::get_module_address(const char *module_name)
 {
     // TODO: Store modules addresses in map.
-    uint32_t result = 0;
+    uintptr_t result = 0;
     HANDLE snapshot_handle = WINAPI_CALL(CreateToolhelp32Snapshot(
         TH32CS_SNAPMODULE | TH32CS_SNAPMODULE32, _process_id));
     if (snapshot_handle != INVALID_HANDLE_VALUE)
@@ -261,7 +261,7 @@ uint32_t ExternalProcess::get_module_address(const char *module_name)
                 if (!_strcmpi(module_entry.szModule, module_name))
                 {
                     result =
-                        reinterpret_cast<uint32_t>(module_entry.modBaseAddr);
+                        reinterpret_cast<uintptr_t>(module_entry.modBaseAddr);
                     break;
                 }
             } while (Module32Next(snapshot_handle, &module_entry));
@@ -271,8 +271,8 @@ uint32_t ExternalProcess::get_module_address(const char *module_name)
     return result;
 }
 
-uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
-                                              ...)
+uintptr_t ExternalProcess::call_cdecl_function(uintptr_t address, size_t argc,
+                                               ...)
 {
     if (_callers.find(address) == _callers.end())
     {
@@ -285,13 +285,13 @@ uint32_t ExternalProcess::call_cdecl_function(uint32_t address, uint32_t argc,
     }
     // TODO: Optimize: store last args and send new only if there are diffs.
     send_external_caller_arguments(_callers[address],
-                                   reinterpret_cast<uint32_t>(&argc) + 4);
+                                   reinterpret_cast<uintptr_t>(&argc) + 4);
 
     return call_external_function(_callers[address]);
 }
 
-uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
-                                                ...)
+uintptr_t ExternalProcess::call_stdcall_function(uintptr_t address, size_t argc,
+                                                 ...)
 {
     if (_callers.find(address) == _callers.end())
     {
@@ -304,14 +304,14 @@ uint32_t ExternalProcess::call_stdcall_function(uint32_t address, uint32_t argc,
     }
     // TODO: Optimize: store last args and send new only if there are diffs.
     send_external_caller_arguments(_callers[address],
-                                   reinterpret_cast<uint32_t>(&argc) + 4);
+                                   reinterpret_cast<uintptr_t>(&argc) + 4);
 
     return call_external_function(_callers[address]);
 }
 
-uint32_t ExternalProcess::call_thiscall_function(uint32_t address,
-                                                 uint32_t this_ptr,
-                                                 uint32_t argc, ...)
+uintptr_t ExternalProcess::call_thiscall_function(uintptr_t address,
+                                                  uintptr_t this_ptr,
+                                                  size_t argc, ...)
 {
     if (_callers.find(address) == _callers.end())
     {
@@ -324,14 +324,14 @@ uint32_t ExternalProcess::call_thiscall_function(uint32_t address,
     }
     // TODO: Optimize: store last args and send new only if there are diffs.
     send_external_caller_arguments(_callers[address],
-                                   reinterpret_cast<uint32_t>(&argc) + 4);
+                                   reinterpret_cast<uintptr_t>(&argc) + 4);
     send_thiscall_this_ptr(_callers[address], this_ptr);
     return call_external_function(_callers[address]);
 }
 
-void ExternalProcess::inject_code(uint32_t address, const uint8_t *bytes,
-                                  uint32_t bytes_size,
-                                  uint32_t overwrite_bytes_size,
+void ExternalProcess::inject_code(uintptr_t address, const uint8_t *bytes,
+                                  size_t bytes_size,
+                                  size_t overwrite_bytes_size,
                                   enInjectionType it)
 {
     // TODO: Implement call-based injector.
@@ -341,7 +341,7 @@ void ExternalProcess::inject_code(uint32_t address, const uint8_t *bytes,
     /* If colde has not already injected on @address address */
     if (_injected_code.find(address) == _injected_code.end())
     {
-        uint32_t result = 0;
+        uintptr_t result = 0;
         switch (it)
         {
         case enInjectionType::EIT_JMP:
@@ -364,7 +364,7 @@ void ExternalProcess::inject_code(uint32_t address, const uint8_t *bytes,
     }
 }
 
-void ExternalProcess::uninject_code(uint32_t address)
+void ExternalProcess::uninject_code(uintptr_t address)
 {
     auto ici = _injected_code.find(address);
     if (ici != _injected_code.end())
@@ -395,8 +395,8 @@ void ExternalProcess::uninject_code(uint32_t address)
     }
 }
 
-void ExternalProcess::patch(uint32_t address, const uint8_t *bytes,
-                            uint32_t size)
+void ExternalProcess::patch(uintptr_t address, const uint8_t *bytes,
+                            size_t size)
 {
     // TODO: Store patched bytes to be able to unpatch later.
     /* Set vp */
@@ -409,9 +409,9 @@ void ExternalProcess::patch(uint32_t address, const uint8_t *bytes,
     restore_virtual_protect(address);
 }
 
-uint32_t ExternalProcess::find_signature(uint32_t address, uint32_t size,
-                                         const uint8_t *signature,
-                                         const char *mask) const
+uintptr_t ExternalProcess::find_signature(uintptr_t address, size_t size,
+                                          const uint8_t *signature,
+                                          const char *mask) const
 {
     if (!signature)
     {
@@ -427,10 +427,10 @@ uint32_t ExternalProcess::find_signature(uint32_t address, uint32_t size,
     }
     uint8_t *buffer = new uint8_t[size];
     read_buf(address, size, buffer);
-    uint32_t result = 0;
-    for (uint32_t i = 0; i <= size - strlen(mask); i++)
+    uintptr_t result = 0;
+    for (size_t i = 0; i <= size - strlen(mask); i++)
     {
-        uint32_t mask_offset = 0;
+        uintptr_t mask_offset = 0;
         while (mask[mask_offset])
         {
             if (mask[mask_offset] == 'x' &&
@@ -496,7 +496,7 @@ void ExternalProcess::provide_debug_access(void)
                                       (PTOKEN_PRIVILEGES)NULL, (PDWORD)NULL));
 }
 
-uint32_t ExternalProcess::build_cdecl_caller(uint32_t address, uint32_t argc)
+uintptr_t ExternalProcess::build_cdecl_caller(uintptr_t address, size_t argc)
 {
     /* Calculate caller size */
     size_t caller_size =
@@ -506,24 +506,24 @@ uint32_t ExternalProcess::build_cdecl_caller(uint32_t address, uint32_t argc)
         1;               /* ret-instruction size */
 
     /* Allocate space for the caller in the remote process's address space */
-    uint32_t caller_address = alloc(caller_size);
+    uintptr_t caller_address = alloc(caller_size);
 
     /* Create local buffer to be sent in remote process */
     uint8_t *local_caller_buffer = new uint8_t[caller_size];
 
     /* Write push-args instructions in the caller. */
-    for (uint32_t i = 0; i < argc; i++)
+    for (size_t i = 0; i < argc; i++)
     {
         local_caller_buffer[i * 5] = 0x68; /* push */
         /* argument */
-        *reinterpret_cast<uint32_t *>(local_caller_buffer + i * 5 + 1) = 0;
+        *reinterpret_cast<uintptr_t *>(local_caller_buffer + i * 5 + 1) = 0;
     }
 
     /* Write call-instruction to the caller bytes */
     local_caller_buffer[argc * 5] = 0xe8; /* call */
 
     /* Calculate and write an address for the near call instruction */
-    *reinterpret_cast<uint32_t *>(local_caller_buffer + argc * 5 + 1) =
+    *reinterpret_cast<uintptr_t *>(local_caller_buffer + argc * 5 + 1) =
         address - (caller_address + argc * 5) - 5;
 
     /* Write restore-stack-instructions to the caller bytes */
@@ -542,7 +542,7 @@ uint32_t ExternalProcess::build_cdecl_caller(uint32_t address, uint32_t argc)
     return caller_address;
 }
 
-uint32_t ExternalProcess::build_stdcall_caller(uint32_t address, uint32_t argc)
+uintptr_t ExternalProcess::build_stdcall_caller(uintptr_t address, size_t argc)
 {
     /* Calculate caller size */
     size_t caller_size =
@@ -551,24 +551,24 @@ uint32_t ExternalProcess::build_stdcall_caller(uint32_t address, uint32_t argc)
         1;               /* ret-instruction size */
 
     /* Allocate space for the caller in the remote process's address space */
-    uint32_t caller_address = alloc(caller_size);
+    uintptr_t caller_address = alloc(caller_size);
 
     /* Create local buffer to be sent in remote process */
     uint8_t *local_caller_buffer = new uint8_t[caller_size];
 
     /* Write push-args instructions in the caller. */
-    for (uint32_t i = 0; i < argc; i++)
+    for (size_t i = 0; i < argc; i++)
     {
         local_caller_buffer[i * 5] = 0x68; /* push */
         /* argument */
-        *reinterpret_cast<uint32_t *>(local_caller_buffer + i * 5 + 1) = 0;
+        *reinterpret_cast<uintptr_t *>(local_caller_buffer + i * 5 + 1) = 0;
     }
 
     /* Write call-instruction to the caller bytes */
     local_caller_buffer[argc * 5] = 0xe8; /* call */
 
     /* Calculate and write an address for the near call instruction */
-    *reinterpret_cast<uint32_t *>(local_caller_buffer + argc * 5 + 1) =
+    *reinterpret_cast<uintptr_t *>(local_caller_buffer + argc * 5 + 1) =
         address - (caller_address + argc * 5) - 5;
 
     /* Write ret-instruction to the caller bytes */
@@ -582,7 +582,7 @@ uint32_t ExternalProcess::build_stdcall_caller(uint32_t address, uint32_t argc)
     return caller_address;
 }
 
-uint32_t ExternalProcess::build_thiscall_caller(uint32_t address, uint32_t argc)
+uintptr_t ExternalProcess::build_thiscall_caller(uintptr_t address, size_t argc)
 {
     /* Calculate caller size */
     size_t caller_size =
@@ -592,28 +592,28 @@ uint32_t ExternalProcess::build_thiscall_caller(uint32_t address, uint32_t argc)
         1;               /* ret-instruction size */
 
     /* Allocate space for the caller in the remote process's address space */
-    uint32_t caller_address = alloc(caller_size);
+    uintptr_t caller_address = alloc(caller_size);
 
     /* Create local buffer to be sent in remote process */
     uint8_t *local_caller_buffer = new uint8_t[caller_size];
 
     /* Write push-args instructions in the caller. */
-    for (uint32_t i = 0; i < argc; i++)
+    for (size_t i = 0; i < argc; i++)
     {
         local_caller_buffer[i * 5] = 0x68; /* push */
         /* argument */
-        *reinterpret_cast<uint32_t *>(local_caller_buffer + i * 5 + 1) = 0;
+        *reinterpret_cast<uintptr_t *>(local_caller_buffer + i * 5 + 1) = 0;
     }
 
     /* Write [mov ecx, _this] to the caller bytes */
     local_caller_buffer[argc * 5] = 0xB9; /* mov ecx, */
-    *reinterpret_cast<uint32_t *>(local_caller_buffer + argc * 5 + 1) = 0;
+    *reinterpret_cast<uintptr_t *>(local_caller_buffer + argc * 5 + 1) = 0;
 
     /* Write call-instruction to the caller bytes */
     local_caller_buffer[argc * 5 + 5] = 0xe8; /* call */
 
     /* Calculate and write an address for the near call instruction */
-    *reinterpret_cast<uint32_t *>(local_caller_buffer + argc * 5 + 5 + 1) =
+    *reinterpret_cast<uintptr_t *>(local_caller_buffer + argc * 5 + 5 + 1) =
         address - (caller_address + argc * 5 + 5) - 5;
 
     /* Write ret-instruction to the caller bytes */
@@ -628,7 +628,7 @@ uint32_t ExternalProcess::build_thiscall_caller(uint32_t address, uint32_t argc)
 }
 
 void ExternalProcess::send_external_caller_arguments(ExternalCaller const &ec,
-                                                     uint32_t args, ...)
+                                                     uintptr_t args, ...)
 {
     // for (uint32_t i = 0; i < ec.argc; i++)
     //{
@@ -640,12 +640,12 @@ void ExternalProcess::send_external_caller_arguments(ExternalCaller const &ec,
     uint8_t *push_args_block = new uint8_t[ec.argc * 5];
 
     /* Write push-args instructions in the local buffer */
-    for (uint32_t i = 0; i < ec.argc; i++)
+    for (size_t i = 0; i < ec.argc; i++)
     {
         push_args_block[i * 5] = 0x68; /* push */
         /* argument */
-        *reinterpret_cast<uint32_t *>(push_args_block + i * 5 + 1) =
-            *(((uint32_t *)args) + ec.argc - i - 1);
+        *reinterpret_cast<uintptr_t *>(push_args_block + i * 5 + 1) =
+            *(((uintptr_t *)args) + ec.argc - i - 1);
     }
 
     /* Write the local buffer in caller @ec in the external process */
@@ -655,16 +655,16 @@ void ExternalProcess::send_external_caller_arguments(ExternalCaller const &ec,
 }
 
 void ExternalProcess::send_thiscall_this_ptr(const ExternalCaller &ec,
-                                             uint32_t this_ptr)
+                                             uintptr_t this_ptr)
 {
     if (ec.cc == enCallConvention::ECC_THISCALL)
     {
-        write<uint32_t>(ec.caller_address + ec.argc * 5 + 1, this_ptr);
+        write<uintptr_t>(ec.caller_address + ec.argc * 5 + 1, this_ptr);
     }
     return;
 }
 
-uint32_t ExternalProcess::call_external_function(
+uintptr_t ExternalProcess::call_external_function(
     const ExternalProcess::ExternalCaller &ec) const
 {
     /* Create a thread in the remote process */
@@ -678,18 +678,19 @@ uint32_t ExternalProcess::call_external_function(
     {
     }
 
-    DWORD result = 0;
+    uintptr_t result = 0;
     /* Get the returned value */
-    WINAPI_CALL(GetExitCodeThread(thread_handle, &result));
+    WINAPI_CALL(
+        GetExitCodeThread(thread_handle, reinterpret_cast<LPDWORD>(&result)));
 
     WINAPI_CALL(CloseHandle(thread_handle));
-    return result;
+    return reinterpret_cast<uintptr_t>(result);
 }
 
-uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
-                                                const uint8_t *bytes,
-                                                uint32_t size,
-                                                uint32_t overwrite_bytes_size)
+uintptr_t ExternalProcess::inject_code_using_jmp(uintptr_t address,
+                                                 const uint8_t *bytes,
+                                                 size_t size,
+                                                 size_t overwrite_bytes_size)
 {
     if (overwrite_bytes_size < 5) /* should be at least 5 bytes for jmp */
     {
@@ -704,10 +705,10 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
     read_buf(address, overwrite_bytes_size, original_bytes);
 
     /* Calculate whole remote process buffer size */
-    uint32_t allocated_buf_size = size + overwrite_bytes_size + 5;
+    size_t allocated_buf_size = size + overwrite_bytes_size + 5;
 
     /* Allocate memory for remote buffer */
-    uint32_t allocated_buf = alloc(allocated_buf_size);
+    uintptr_t allocated_buf = alloc(allocated_buf_size);
 
     /* Create local buffer to be sent in remote process' buf */
     uint8_t *local_buf = new uint8_t[allocated_buf_size];
@@ -723,7 +724,7 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
     local_buf[size + overwrite_bytes_size] = 0xE9;
 
     /* Put jmp address in local buffer */
-    *reinterpret_cast<uint32_t *>(
+    *reinterpret_cast<uintptr_t *>(
         &(local_buf[size + overwrite_bytes_size + 1])) =
         (address + overwrite_bytes_size) -
         (allocated_buf + size + overwrite_bytes_size) - 5;
@@ -733,7 +734,7 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
 
     /* Overwrite original bytes */
     /* Don't need local_buf anymore, so it can be used here */
-    uint32_t nops_number = overwrite_bytes_size - 5;
+    size_t nops_number = overwrite_bytes_size - 5;
     if (nops_number > 0)
     {
         memset(local_buf, 0x90, nops_number); /* Put nops in local buffer */
@@ -741,7 +742,7 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
     local_buf[nops_number] = 0xE9; /* Put jmp instruction in local buffer */
 
     /* Put jmp address in local buffer */
-    *reinterpret_cast<uint32_t *>(&(local_buf[nops_number + 1])) =
+    *reinterpret_cast<uintptr_t *>(&(local_buf[nops_number + 1])) =
         allocated_buf - (address + nops_number) - 5;
 
     /* Write local buffer in remote process */
@@ -755,9 +756,9 @@ uint32_t ExternalProcess::inject_code_using_jmp(uint32_t address,
     return allocated_buf;
 }
 
-uint32_t ExternalProcess::inject_code_using_push_ret(
-    uint32_t address, const uint8_t *bytes, uint32_t bytes_size,
-    uint32_t overwrite_bytes_size)
+uintptr_t ExternalProcess::inject_code_using_push_ret(
+    uintptr_t address, const uint8_t *bytes, size_t bytes_size,
+    size_t overwrite_bytes_size)
 {
     if (overwrite_bytes_size < 6) /* should be at least 6 bytes for push-ret */
     {
@@ -772,10 +773,10 @@ uint32_t ExternalProcess::inject_code_using_push_ret(
     read_buf(address, overwrite_bytes_size, original_bytes);
 
     /* Calculate whole remote process buffer size */
-    uint32_t allocated_buf_size = bytes_size + overwrite_bytes_size + 5;
+    size_t allocated_buf_size = bytes_size + overwrite_bytes_size + 5;
 
     /* Allocate memory for remote buffer */
-    uint32_t allocated_buf = alloc(allocated_buf_size);
+    uintptr_t allocated_buf = alloc(allocated_buf_size);
 
     /* Create local buffer to be sent in remote process' buf */
     uint8_t *local_buf = new uint8_t[allocated_buf_size];
@@ -791,7 +792,7 @@ uint32_t ExternalProcess::inject_code_using_push_ret(
     local_buf[bytes_size + overwrite_bytes_size] = 0xE9;
 
     /* Put jmp address in local buffer */
-    *reinterpret_cast<uint32_t *>(
+    *reinterpret_cast<uintptr_t *>(
         &(local_buf[bytes_size + overwrite_bytes_size + 1])) =
         (address + overwrite_bytes_size) -
         (allocated_buf + bytes_size + overwrite_bytes_size) - 5;
@@ -801,14 +802,14 @@ uint32_t ExternalProcess::inject_code_using_push_ret(
 
     /* Overwrite original bytes */
     /* Don't need local_buf anymore, so it can be used here */
-    uint32_t nops_number = overwrite_bytes_size - 6;
+    size_t nops_number = overwrite_bytes_size - 6;
     if (nops_number > 0)
     {
         memset(local_buf, 0x90, nops_number); /* Put nops in local buffer */
     }
     local_buf[nops_number] = 0x68; /* Put push instruction in local buffer */
     /* Put return address in local buffer */
-    *reinterpret_cast<uint32_t *>(&(local_buf[nops_number + 1])) =
+    *reinterpret_cast<uintptr_t *>(&(local_buf[nops_number + 1])) =
         allocated_buf;
     /* Put ret instruction in local buffer */
     local_buf[nops_number + 5] = 0xC3;

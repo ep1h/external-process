@@ -4,3 +4,4 @@ ColumnLimit: 80
 AccessModifierOffset: -4
 UseTab: Never
 SortIncludes: false
+IndentExternBlock: NoIndent

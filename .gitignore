@@ -2,5 +2,6 @@
 /*/
 !/.gitignore
 !/.clang-format
+!/Makefile
 
 !/src

@@ -3,5 +3,19 @@
 !/.gitignore
 !/.clang-format
 !/Makefile
-
+!/.gitmodules
 !/src
+
+!/test
+/test/*
+!/test/Makefile
+!/test/shared_memory
+!/test/external_process_simulator
+/test/external_process_simulator/*
+!/test/external_process_simulator/src
+!/test/external_process_simulator/Makefile
+!/test/tests
+/test/tests/*
+!/test/tests/src
+# !/test/tests/eztest
+!/test/tests/Makefile

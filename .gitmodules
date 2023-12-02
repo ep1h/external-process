@@ -1,0 +1,3 @@
+[submodule "test/tests/eztest"]
+	path = test/tests/eztest
+	url = https://github.com/ep1h/eztest.git
